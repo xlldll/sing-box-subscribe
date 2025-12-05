@@ -2,7 +2,7 @@
   "subscribes": [
     {
       "tag": "Fn",
-      "url": "",
+      "url": "https://x1.344211.cc/api/v1/client/subscribe?token=5f940a0b84ae148eb9ef829d13f211a4",
       "enabled": true,
       "emoji": 0,
       "subgroup": "",
@@ -12,7 +12,7 @@
     },
     {
       "tag": "LMY",
-      "url": "",
+      "url": "https://linka.lmscunb.cc:2087/api/v1/client/subscribe?token=c468eafddee4df660541aefe467cf635",
       "enabled": true,
       "emoji": 0,
       "subgroup": "",
@@ -22,7 +22,7 @@
     },
     {
       "tag": "Fast",
-      "url": "",
+      "url": "https://10ncydlf.flsubcn.cc:2096/zvlqjih1t/obsvw3zgxzapifk6?clash=1&extend=1",
       "enabled": true,
       "emoji": 0,
       "subgroup": "",
@@ -38,6 +38,6 @@
   "save_config_path": "./config.json",
   "auto_backup": false,
   "exclude_protocol": "ssr",
-  "config_template": "",
+  "config_template": "config_template/ConfigforMac.json",
   "Only-nodes": false
 }

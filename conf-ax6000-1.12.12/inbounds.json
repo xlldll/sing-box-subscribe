@@ -1,0 +1,24 @@
+{
+  "inbounds": [
+    {
+      "type": "direct",
+      "tag": "dns-in",
+      "listen": "0.0.0.0",
+      "listen_port": 1053,
+      "tcp_fast_open": true,
+      "tcp_multi_path": false,
+      "udp_fragment": true,
+      "udp_timeout": 300
+    },
+    {
+      "type": "tproxy",
+      "tag": "tproxy-in",
+      "listen": "0.0.0.0",
+      "listen_port": 7893,
+      "tcp_fast_open": true,
+      "tcp_multi_path": false,
+      "udp_fragment": true,
+      "udp_timeout": 300
+    }
+  ]
+}

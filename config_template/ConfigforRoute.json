@@ -1,0 +1,438 @@
+{
+  "log": {
+    "disabled": false,
+    "level": "info",
+    "timestamp": true,
+    "output": "/overlay/ShellCrash/SB112/sb.log"
+  },
+  "dns": {
+    "servers": [
+      {
+        "tag": "dns_direct",
+        "type": "https",
+        "server": "223.5.5.5",
+        "path": "/dns-query",
+        "tls": {
+          "enabled": true,
+          "server_name": "223.5.5.5",
+          "insecure": false,
+          "alpn": [
+            "h2"
+          ]
+        },
+        "detour": "🎯 全球直连"
+      },
+      {
+        "tag": "dns_proxy",
+        "type": "https",
+        "server": "dns.google",
+        "path": "/dns-query",
+        "tls": {
+          "enabled": true,
+          "server_name": "dns.google",
+          "insecure": false,
+          "alpn": [
+            "h2"
+          ]
+        },
+        "detour": "🔐 PROXY"
+      }
+    ],
+    "rules": [
+      {
+        "query_type": [
+          "AAAA"
+        ],
+        "action": "reject",
+        "no_drop": true
+      },
+      {
+        "rule_set": [
+          "ads"
+        ],
+        "action": "predefined",
+        "rcode": "NOERROR",
+        "answer": [
+          "blocked.local. IN A 192.168.99.99"
+        ]
+      },
+      {
+        "rule_set": [
+          "cn",
+          "games-cn"
+        ],
+        "server": "dns_direct"
+      },
+      {
+        "rule_set": [
+          "cnip"
+        ],
+        "server": "dns_direct"
+      },
+      {
+        "server": "dns_proxy"
+      }
+    ],
+    "final": "dns_proxy",
+    "strategy": "ipv4_only",
+    "disable_cache": false,
+    "disable_expire": false,
+    "independent_cache": true,
+    "reverse_mapping": true
+  },
+  "ntp": {
+    "enabled": true,
+    "server": "ntp1.aliyun.com",
+    "detour": "🔐 PROXY"
+  },
+  "experimental": {
+    "cache_file": {
+      "enabled": true,
+      "path": "/overlay/ShellCrash/SB112/cache.db",
+      "store_rdrc": true
+    },
+    "clash_api": {
+      "external_controller": "127.0.0.1:9999",
+      "external_ui": "ui",
+      "secret": "",
+      "external_ui_download_url": "https://gh-proxy.com/https://github.com/MetaCubeX/metacubexd/archive/refs/heads/gh-pages.zip",
+      "external_ui_download_detour": "🎯 全球直连",
+      "default_mode": "rule"
+    }
+  },
+  "inbounds": [
+    {
+      "type": "direct",
+      "tag": "dns-in",
+      "listen": "0.0.0.0",
+      "listen_port": 1053,
+      "tcp_fast_open": true,
+      "tcp_multi_path": false,
+      "udp_fragment": true,
+      "udp_timeout": 300
+    },
+    {
+      "type": "tproxy",
+      "tag": "tproxy-in",
+      "listen": "0.0.0.0",
+      "listen_port": 7893,
+      "tcp_fast_open": true,
+      "tcp_multi_path": false,
+      "udp_fragment": true,
+      "udp_timeout": 300
+    }
+  ],
+  "outbounds": [
+    {
+      "tag": "🔐 PROXY",
+      "type": "selector",
+      "outbounds": [
+        "🔐🇸🇬 PROXYSG",
+        "🔐🇹🇼 PROXYTW",
+        "🔐🇭🇰 PROXYHK",
+        "👑 高级节点",
+        "📉 省流节点",
+        "🧐 HY2",
+        "🆓 手动节点"
+      ]
+    },
+    {
+      "tag": "🆓 手动节点",
+      "type": "selector",
+      "outbounds": [
+        "CustomNode",
+        "{all}"
+      ]
+    },
+    {
+      "tag": "🧐 HY2",
+      "type": "selector",
+      "outbounds": [
+        "🧐🇹🇼 HY2TW",
+        "🧐🇸🇬 HY2SG",
+        "🧐🇭🇰 HY2HK"
+      ]
+    },
+    {
+      "tag": "🔐🇸🇬 PROXYSG",
+      "type": "urltest",
+      "url": "http://1.1.1.1/cdn-cgi/trace",
+      "interval": "10m",
+      "idle_timeout": "10m",
+      "tolerance": 120,
+      "outbounds": [
+        "{all}"
+      ],
+      "filter": [
+        {
+          "action": "include",
+          "keywords": [
+            "(?i)(🇸🇬|新|sg|singapore)"
+          ]
+        },
+        {
+          "action": "include",
+          "type": [
+            "trojan",
+            "vless"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "🔐🇹🇼 PROXYTW",
+      "type": "urltest",
+      "url": "http://1.1.1.1/cdn-cgi/trace",
+      "interval": "10m",
+      "idle_timeout": "10m",
+      "tolerance": 120,
+      "outbounds": [
+        "{all}"
+      ],
+      "filter": [
+        {
+          "action": "include",
+          "keywords": [
+            "🇹🇼|TW|tw|台湾|臺灣|台|Taiwan"
+          ]
+        },
+        {
+          "action": "include",
+          "type": [
+            "trojan",
+            "vless"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "🔐🇭🇰 PROXYHK",
+      "type": "urltest",
+      "url": "http://1.1.1.1/cdn-cgi/trace",
+      "interval": "10m",
+      "idle_timeout": "10m",
+      "tolerance": 120,
+      "outbounds": [
+        "{all}"
+      ],
+      "filter": [
+        {
+          "action": "include",
+          "keywords": [
+            "(?i)(🇭🇰|港|hk|hongkong|hong kong)"
+          ]
+        },
+        {
+          "action": "include",
+          "type": [
+            "trojan",
+            "vless"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "🧐🇹🇼 HY2TW",
+      "type": "selector",
+      "outbounds": [
+        "{all}",
+        "🆓 手动节点"
+      ],
+      "filter": [
+        {
+          "action": "include",
+          "keywords": [
+            "🇹🇼|TW|tw|台湾|臺灣|台|Taiwan"
+          ]
+        },
+        {
+          "action": "include",
+          "type": [
+            "hysteria2"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "🧐🇸🇬 HY2SG",
+      "type": "selector",
+      "outbounds": [
+        "{all}",
+        "🆓 手动节点"
+      ],
+      "filter": [
+        {
+          "action": "include",
+          "keywords": [
+            "(?i)(🇸🇬|新|sg|singapore)"
+          ]
+        },
+        {
+          "action": "include",
+          "type": [
+            "hysteria2"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "🧐🇭🇰 HY2HK",
+      "type": "selector",
+      "outbounds": [
+        "{all}",
+        "🆓 手动节点"
+      ],
+      "filter": [
+        {
+          "action": "include",
+          "keywords": [
+            "(?i)(🇭🇰|港|hk|hongkong|hong kong)"
+          ]
+        },
+        {
+          "action": "include",
+          "type": [
+            "hysteria2"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "👑 高级节点",
+      "type": "selector",
+      "outbounds": [
+        "{all}",
+        "🆓 手动节点"
+      ],
+      "filter": [
+        {
+          "action": "include",
+          "keywords": [
+            "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "📉 省流节点",
+      "type": "selector",
+      "outbounds": [
+        "{all}",
+        "🆓 手动节点"
+      ],
+      "filter": [
+        {
+          "action": "include",
+          "keywords": [
+            "0\\.[1-5]|低倍率|省流|大流量"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "🎯 全球直连",
+      "type": "selector",
+      "outbounds": [
+        "DIRECT"
+      ]
+    },
+    {
+      "tag": "🔴 全球拦截",
+      "type": "selector",
+      "outbounds": [
+        "REJECT"
+      ]
+    },
+    {
+      "tag": "DIRECT",
+      "type": "direct"
+    },
+    {
+      "tag": "REJECT",
+      "type": "block"
+    },
+    {
+      "tag": "CustomNode",
+      "type": "hysteria2",
+      "server": "1sg001.476579.xyz",
+      "server_port": 8080,
+      "password": "311f32f9-ab81-4ef0-80f8-7e7730ec4b54",
+      "up_mbps": 50,
+      "down_mbps": 100,
+      "tls": {
+        "enabled": true,
+        "server_name": "1sg001.476579.xyz",
+        "insecure": false
+      }
+    }
+  ],
+  "route": {
+    "rules": [
+      {
+        "inbound": [
+          "tproxy-in",
+          "dns-in"
+        ],
+        "action": "sniff"
+      },
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "port": 53
+          },
+          {
+            "protocol": [
+              "dns"
+            ]
+          }
+        ],
+        "action": "hijack-dns"
+      },
+      {
+        "ip_is_private": true,
+        "outbound": "🎯 全球直连"
+      },
+      {
+        "rule_set": [
+          "cnip"
+        ],
+        "outbound": "🎯 全球直连"
+      }
+    ],
+    "rule_set": [
+      {
+        "tag": "ads",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/category-ads-all.srs",
+        "download_detour": "🎯 全球直连"
+      },
+      {
+        "tag": "cnip",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geoip/cn.srs",
+        "download_detour": "🎯 全球直连"
+      },
+      {
+        "tag": "cn",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/cn.srs",
+        "download_detour": "🎯 全球直连"
+      },
+      {
+        "tag": "games-cn",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/category-games-cn.srs",
+        "download_detour": "🎯 全球直连"
+      }
+    ],
+    "final": "🔐 PROXY",
+    "auto_detect_interface": true,
+    "default_mark": 23333
+  }
+}
