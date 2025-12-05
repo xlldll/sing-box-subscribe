@@ -3,6 +3,6 @@
     "disabled": false,
     "level": "info",
     "timestamp": true,
-    "output": "/Users/CHQ/Desktop/Router/SingBox1.12.12/singbox-mac/sb.log"
+    "output": "/Users/CHQ/Desktop/Router/SFM/logs.log"
   }
 }

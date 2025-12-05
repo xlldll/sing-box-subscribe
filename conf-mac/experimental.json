@@ -2,7 +2,7 @@
   "experimental": {
     "cache_file": {
       "enabled": true,
-      "path": "/Users/CHQ/Desktop/Router/SingBox1.12.12/singbox-mac/cache.db",
+      "path": "/Users/CHQ/Desktop/Router/SFM/cache.db",
       "store_rdrc": true
     },
     "clash_api": {

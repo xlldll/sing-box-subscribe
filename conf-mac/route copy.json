@@ -21,22 +21,11 @@
         "outbound": "🎯 全球直连"
       },
       {
-        "rule_set": ["ais"],
-        "outbound": "🔐 PROXY"
-      },
-      {
         "rule_set": ["cnip"],
         "outbound": "🎯 全球直连"
       }
     ],
     "rule_set": [
-      {
-        "tag": "ais",
-        "type": "remote",
-        "format": "binary",
-        "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/category-ai-!cn.srs",
-        "download_detour": "🎯 全球直连"
-      },
       {
         "tag": "ads",
         "type": "local",

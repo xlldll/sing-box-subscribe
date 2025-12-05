@@ -13,62 +13,129 @@ color_code = [31, 32, 33, 34, 35, 36, 91, 92, 93, 94, 95, 96]
 
 
 def loop_color(text):
-    text = '\033[1;{color}m{text}\033[0m'.format(color=color_code[0], text=text)
+    """
+    轮流使用 color_code 中的颜色代码为终端输出着色。
+
+    参数：
+        text: str
+            需要加颜色的文本。
+
+    返回：
+        str: 已包裹 ANSI 颜色转义序列的字符串。
+    """
+    text = '\033[1;{color}m{text}\033[0m'.format(
+        color=color_code[0],
+        text=text
+    )
+    # 将当前颜色代码移动到列表末尾，实现循环使用
     color_code.append(color_code.pop(0))
     return text
 
 
 def init_parsers():
-    b = os.walk('parsers')
-    for path, dirs, files in b:
+    """
+    初始化协议解析模块。
+
+    扫描 parsers 目录下所有 .py 文件，
+    并通过 importlib 动态导入，填充 parsers_mod 映射：
+        文件名 -> 对应模块对象
+    """
+    for path, dirs, files in os.walk('parsers'):
         for file in files:
-            f = os.path.splitext(file)
-            if f[1] == '.py':
-                parsers_mod[f[0]] = importlib.import_module('parsers.' + f[0])
+            name, ext = os.path.splitext(file)
+            if ext == '.py':
+                parsers_mod[name] = importlib.import_module('parsers.' + name)
 
 
 def get_template():
-    template_dir = 'config_template'  # 配置模板文件夹路径
-    # template_dir = '/Users/CHQ/Desktop/Router/SingBox1.12.12/conf-mac'  # 配置模板文件夹路径
-    template_files = os.listdir(template_dir)  # 获取文件夹中的所有文件
-    template_list = [os.path.splitext(file)[0] for file in template_files if
-                     file.endswith('.json')]  # 移除扩展名并过滤出以.json结尾的文件
-    template_list.sort()  # 对文件名进行排序
+    """
+    获取配置模板名称列表（不含 .json 后缀）。
+
+    返回：
+        list[str]: 按名称排序的模板文件名列表。
+    """
+    template_dir = 'config_template'
+    template_files = os.listdir(template_dir)
+    # 只保留 .json 结尾的文件，并去掉扩展名
+    template_list = [
+        os.path.splitext(file)[0]
+        for file in template_files
+        if file.endswith('.json')
+    ]
+    template_list.sort()
     return template_list
 
 
 def load_json(path):
+    """
+    从指定路径读取 JSON 文件并解析为 Python 对象。
+
+    参数：
+        path: str
+            JSON 文件路径。
+
+    返回：
+        Any: 解析后的对象（通常是 dict / list）。
+    """
     return json.loads(tool.readFile(path))
 
 
 def process_subscribes(subscribes):
+    """
+    处理所有订阅配置，生成按 tag 分组的节点字典。
+
+    流程：
+        - 跳过未启用的订阅（enabled = false）
+        - 跳过指向自身服务的订阅（防止循环订阅）
+        - 拉取订阅中的节点列表
+        - 为节点添加前缀 / emoji
+        - 根据 ex-node-name 做节点过滤
+        - 如果设置了 subgroup，将其附加到订阅 tag 上
+        - 将节点按最终 tag 分组累加
+
+    返回：
+        dict[str, list[dict]]: { tag: [node, ...], ... }
+    """
     nodes = {}
     for subscribe in subscribes:
+        # 跳过未启用的订阅
         if 'enabled' in subscribe and not subscribe['enabled']:
             continue
+
+        # 避免递归调用自身提供的订阅服务
         if 'sing-box-subscribe-doraemon.vercel.app' in subscribe['url']:
             continue
+
         _nodes = get_nodes(subscribe['url'])
         if _nodes and len(_nodes) > 0:
             add_prefix(_nodes, subscribe)
             add_emoji(_nodes, subscribe)
             nodefilter(_nodes, subscribe)
+
+            # subgroup 存在时，将其拼接到 tag，中间增加标记 "subgroup"
             if subscribe.get('subgroup'):
-                subscribe['tag'] = subscribe['tag'] + '-' + subscribe['subgroup'] + '-' + 'subgroup'
+                subscribe['tag'] = (
+                    subscribe['tag'] + '-' + subscribe['subgroup'] + '-' + 'subgroup'
+                )
+
             if not nodes.get(subscribe['tag']):
                 nodes[subscribe['tag']] = []
             nodes[subscribe['tag']] += _nodes
         else:
             print('没有在此订阅下找到节点，跳过')
-            # print('Không tìm thấy proxy trong link thuê bao này, bỏ qua')
+
+    # 去重节点名称，防止同名节点过多
     tool.proDuplicateNodeName(nodes)
     return nodes
 
 
 def nodes_filter(nodes, filters, group):
     """
-    filters 支持两种写法（可以混用，按顺序依次执行）：
-    1）按名称关键字过滤：
+    根据 filters 规则列表过滤节点。
+
+    支持两种规则写法（可以混用，按顺序依次执行）：
+
+    1）按节点名称关键字过滤：
        {
          "action": "include" / "exclude",
          "keywords": ["🇺🇸|US|美国", "HK"]
@@ -81,38 +148,60 @@ def nodes_filter(nodes, filters, group):
        }
 
     可选字段：
-       "for": ["America", "Asia"]  # 只对指定 group 生效
+       "for": ["America", "Asia"]
+       - 仅当当前 group 在列表中时，该条过滤规则才生效。
+
+    参数：
+        nodes: list[dict]
+            当前要过滤的节点列表。
+        filters: list[dict]
+            过滤规则列表。
+        group: str
+            当前节点所属分组名称（用来匹配规则中的 "for"）。
+
+    返回：
+        list[dict]: 过滤后的节点列表。
     """
     for f in filters:
-        # 如果指定了 for 且当前 group 不在其中，跳过这条规则
+        # 如果规则限制了适用分组，且当前 group 不在其中，则跳过此规则
         if f.get('for') and group not in f['for']:
             continue
 
-        # 优先按 type 过滤
+        # 优先按协议类型过滤
         if 'type' in f:
             nodes = action_types(nodes, f['action'], f['type'])
         else:
-            # 退回旧逻辑：按关键字过滤
+            # 否则按关键字过滤
             nodes = action_keywords(nodes, f['action'], f.get('keywords', []))
 
     return nodes
 
 
 def action_keywords(nodes, action, keywords):
-    # filter 将按顺序依次执行
-    # "filter":[
-    #   {"action":"include","keywords":[""]},
-    #   {"action":"exclude","keywords":[""]}
-    # ]
+    """
+    按节点名称关键字进行过滤。
+
+    参数：
+        nodes: list[dict]
+            要过滤的节点列表。
+        action: str
+            "include"：只保留匹配关键字的节点
+            "exclude"：移除匹配关键字的节点
+        keywords: list[str]
+            关键字列表，内部会用 | 拼成一个正则表达式。
+
+    返回：
+        list[dict]: 过滤后的节点列表。
+    """
     temp_nodes = []
     flag = False
     if action == 'exclude':
         flag = True
 
-    # 将多个关键字用 | 连接成正则
+    # 将多个关键字用 | 连接成一个正则表达式
     combined_pattern = '|'.join(keywords or [])
 
-    # 如果关键字为空或只有空白，则不做任何过滤
+    # 如果关键字为空或仅为空白字符，不执行任何过滤
     if not combined_pattern or combined_pattern.isspace():
         return nodes
 
@@ -122,8 +211,8 @@ def action_keywords(nodes, action, keywords):
         name = node.get('tag', '')
         match_flag = bool(compiled_pattern.search(name))
 
-        # 用 XOR 决定是否保留节点
-        # include: match_flag ^ False → 匹配才保留
+        # 使用 XOR 逻辑决定是否保留：
+        # include: match_flag ^ False → 匹配则保留
         # exclude: match_flag ^ True  → 匹配则丢弃
         if match_flag ^ flag:
             temp_nodes.append(node)
@@ -133,28 +222,36 @@ def action_keywords(nodes, action, keywords):
 
 def action_types(nodes, action, types):
     """
-    按节点协议类型过滤：
-    types: ["hysteria2", "trojan", "vmess", ...]
-    action:
-        - "include": 只保留 type 在列表中的节点
-        - "exclude": 去掉 type 在列表中的节点
+    按节点协议类型进行过滤。
+
+    参数：
+        nodes: list[dict]
+            要过滤的节点列表。
+        action: str
+            "include"：只保留 type 在列表中的节点
+            "exclude"：移除 type 在列表中的节点
+        types: list[str]
+            协议类型列表，例如 ["hysteria2", "trojan", "vmess"]。
+
+    返回：
+        list[dict]: 过滤后的节点列表。
     """
     temp_nodes = []
     flag = False
     if action == 'exclude':
         flag = True
 
-    # 规范化 type 列表，全部小写去空白
+    # 标准化协议类型：去空白并转小写
     type_set = {t.strip().lower() for t in (types or []) if t.strip()}
     if not type_set:
-        # 如果没给有效 type，就不做过滤
+        # 如果未提供有效类型，不执行任何过滤
         return nodes
 
     for node in nodes:
         node_type = str(node.get('type', '')).lower()
         match_flag = node_type in type_set
 
-        # 同样用 XOR 决定是否保留
+        # 同样使用 XOR 决定是否保留
         if match_flag ^ flag:
             temp_nodes.append(node)
 
@@ -162,6 +259,15 @@ def action_types(nodes, action, types):
 
 
 def add_prefix(nodes, subscribe):
+    """
+    为节点名称和 detour 名称添加前缀。
+
+    参数：
+        nodes: list[dict]
+            节点列表。
+        subscribe: dict
+            当前订阅配置，若包含 'prefix' 则生效。
+    """
     if subscribe.get('prefix'):
         for node in nodes:
             node['tag'] = subscribe['prefix'] + node['tag']
@@ -170,6 +276,15 @@ def add_prefix(nodes, subscribe):
 
 
 def add_emoji(nodes, subscribe):
+    """
+    根据订阅配置为节点名称和 detour 名称自动添加 emoji。
+
+    参数：
+        nodes: list[dict]
+            节点列表。
+        subscribe: dict
+            当前订阅配置，若 'emoji' 为真，则调用 tool.rename 做重命名。
+    """
     if subscribe.get('emoji'):
         for node in nodes:
             node['tag'] = tool.rename(node['tag'])
@@ -178,183 +293,330 @@ def add_emoji(nodes, subscribe):
 
 
 def nodefilter(nodes, subscribe):
+    """
+    根据订阅配置中的 'ex-node-name' 字段，排除节点。
+
+    规则：
+        ex-node-name 为字符串，可用逗号或竖线分隔多个片段：
+            "HK,JP|Netflix"
+        只要节点 tag 中包含任意一个片段，该节点即被移除。
+
+    参数：
+        nodes: list[dict]
+            当前订阅获取的节点列表（函数会在此列表上原地删除元素）。
+        subscribe: dict
+            当前订阅配置。
+    """
     if subscribe.get('ex-node-name'):
         ex_nodename = re.split(r'[,\|]', subscribe['ex-node-name'])
         for exns in ex_nodename:
-            for node in nodes[:]:  # 遍历 nodes 的副本，以便安全地删除元素
+            # 遍历 nodes 的副本，避免在迭代时直接修改原列表导致跳项
+            for node in nodes[:]:
                 if exns in node['tag']:
                     nodes.remove(node)
 
 
 def get_nodes(url):
+    """
+    从订阅 URL 或本地内容中提取节点列表。
+
+    支持：
+        - sub:// 开头的 base64 订阅（先解码获得真实 URL）
+        - 纯 base64 文本订阅（直接解码后按行解析）
+        - 本地文件路径（无法识别为 URL 且非 base64 时）
+        - 远程 URL（正常 HTTP/HTTPS 链接）
+        - Clash 格式配置（含 proxies）
+        - sing-box 格式配置（含 outbounds）
+
+    返回：
+        list[dict]: 节点字典列表。
+    """
     if url.startswith('sub://'):
+        # 处理 sub:// 包裹的订阅地址（内部为 base64）
         url = tool.b64Decode(url[6:]).decode('utf-8')
+
     urlstr = urlparse(url)
     if not urlstr.scheme:
+        # 无 scheme：先尝试按 base64 解码为纯文本节点链接
         try:
             content = tool.b64Decode(url).decode('utf-8')
             data = parse_content(content)
+
+            # 展开 shadowtls 等返回为 tuple 的节点结构
             processed_list = []
             for item in data:
                 if isinstance(item, tuple):
-                    processed_list.extend([item[0], item[1]])  # 处理shadowtls
+                    processed_list.extend([item[0], item[1]])
                 else:
                     processed_list.append(item)
             return processed_list
         except:
+            # base64 解码失败，则当作本地文件路径处理
             content = get_content_form_file(url)
     else:
+        # 有 scheme：按远程 URL 处理
         content = get_content_from_url(url)
-    
-    # print (content)
-    if type(content) == dict:
+
+    # content 为 dict：可能是 Clash 或 sing-box 配置
+    if isinstance(content, dict):
+        # Clash 配置：从 proxies 中转换为通用链接，再统一解析
         if 'proxies' in content:
             share_links = []
             for proxy in content['proxies']:
                 share_links.append(clash2v2ray(proxy))
             data = '\n'.join(share_links)
             data = parse_content(data)
+
             processed_list = []
             for item in data:
                 if isinstance(item, tuple):
-                    processed_list.extend([item[0], item[1]])  # 处理shadowtls
+                    processed_list.extend([item[0], item[1]])
                 else:
                     processed_list.append(item)
             return processed_list
+
+        # sing-box 配置：从 outbounds 中提取真实节点
         elif 'outbounds' in content:
             outbounds = []
+            # 排除不需要的类型，仅保留真实出站节点
             excluded_types = {"selector", "urltest", "direct", "block", "dns"}
-            filtered_outbounds = [outbound for outbound in content['outbounds'] if outbound.get("type") not in excluded_types]
+            filtered_outbounds = [
+                outbound
+                for outbound in content['outbounds']
+                if outbound.get("type") not in excluded_types
+            ]
             outbounds.extend(filtered_outbounds)
             return outbounds
-    else:
-        data = parse_content(content)
-        processed_list = []
-        for item in data:
-            if isinstance(item, tuple):
-                processed_list.extend([item[0], item[1]])  # 处理shadowtls
-            else:
-                processed_list.append(item)
-        return processed_list
+
+    # content 为纯文本：按通用节点分享链接格式解析
+    data = parse_content(content)
+    processed_list = []
+    for item in data:
+        if isinstance(item, tuple):
+            processed_list.extend([item[0], item[1]])
+        else:
+            processed_list.append(item)
+    return processed_list
 
 
 def parse_content(content):
-    # firstline = tool.firstLine(content)
-    # # print(firstline)
-    # if not get_parser(firstline):
-    #     return None
+    """
+    将多行节点分享链接文本解析为节点列表。
+
+    每一行：
+        - 去除首尾空白
+        - 根据协议选择对应解析器（get_parser）
+        - 解析失败则跳过该行
+        - 解析成功则为节点附加默认的 domain_resolver = "dns_direct"
+
+    返回：
+        list[dict]: 解析得到的节点列表。
+    """
     nodelist = []
     for t in content.splitlines():
         t = t.strip()
         if len(t) == 0:
             continue
+
         factory = get_parser(t)
-        print(factory)
         if not factory:
             continue
+
         try:
             node = factory(t)
-        except Exception as e:  #节点解析失败，跳过
-            pass
+        except Exception:
+            # 单个节点解析失败，忽略该行
+            node = None
+
         if node:
+            # 默认为每个节点指定域名解析器
             node["domain_resolver"] = "dns_direct"
             nodelist.append(node)
+
     return nodelist
 
 
 def get_parser(node):
+    """
+    根据分享链接文本判断协议类型，并返回对应的解析函数。
+
+    逻辑：
+        - 通过 tool.get_protocol 获取协议（如 vmess, trojan, hysteria2 等）
+        - 若 providers 中配置了 exclude_protocol，则排除对应协议
+          （支持 "hy2" 自动映射为 "hysteria2"）
+        - 若协议不在 parsers_mod 中，或被排除，则返回 None
+
+    参数：
+        node: str
+            单行节点分享链接。
+
+    返回：
+        Callable | None: 对应协议的解析函数，
+        若无法解析或被排除，则返回 None。
+    """
     proto = tool.get_protocol(node)
+
+    # 处理需要排除的协议列表
     if providers.get('exclude_protocol'):
         eps = providers['exclude_protocol'].split(',')
         if len(eps) > 0:
             eps = [protocol.strip() for protocol in eps]
+            # 将短写 "hy2" 兼容为 "hysteria2"
             if 'hy2' in eps:
                 index = eps.index('hy2')
                 eps[index] = 'hysteria2'
             if proto in eps:
                 return None
+
     if not proto or proto not in parsers_mod.keys():
         return None
+
     return parsers_mod[proto].parse
 
-
 def get_content_from_url(url, n=10):
+    """
+    从远程订阅 / 链接中获取内容，并根据内容类型进行解析。
+
+    支持的情况：
+        1. 直接为单个节点分享链接（vmess://, ss://, trojan:// 等）：
+           - 直接去空白行后返回纯文本内容。
+        2. 机场订阅（普通 URL）：
+           - 根据 providers["subscribes"] 中配置的 User-Agent 请求。
+           - 如失败会自动重试最多 n 次。
+           - 若返回内容为：
+               - 纯节点文本（含 vmess:// 等）：解码并返回文本。
+               - 含 'proxies'：视为 Clash YAML，解析为 dict 返回。
+               - 含 'outbounds'：视为 sing-box JSON 配置，解析为 dict 返回。
+               - Base64 编码内容：尝试解码为文本返回。
+
+    参数：
+        url: str
+            订阅链接或单节点链接。
+        n: int
+            请求失败时最大重试次数。
+
+    返回：
+        str 或 dict 或 None：
+            - 字符串：节点分享链接文本。
+            - dict：解析后的 Clash 或 sing-box 配置。
+            - None：内容为空或仅空白。
+    """
     UA = ''
     print('处理: \033[31m' + url + '\033[0m')
-    # print('Đang tải link đăng ký: \033[31m' + url + '\033[0m')
-    prefixes = ["vmess://", "vless://", "ss://", "ssr://", "trojan://", "tuic://", "hysteria://", "hysteria2://",
-                "hy2://", "wg://", "wireguard://", "http2://", "socks://", "socks5://"]
+
+    prefixes = [
+        "vmess://", "vless://", "ss://", "ssr://", "trojan://", "tuic://",
+        "hysteria://", "hysteria2://", "hy2://", "wg://", "wireguard://",
+        "http2://", "socks://", "socks5://"
+    ]
+
+    # 情况一：直接是单个节点链接，直接返回（处理去空行）
     if any(url.startswith(prefix) for prefix in prefixes):
         response_text = tool.noblankLine(url)
         return response_text
+
+    # 情况二：为机场订阅 URL，从 providers 中查找自定义 User-Agent
     for subscribe in providers["subscribes"]:
         if 'enabled' in subscribe and not subscribe['enabled']:
             continue
         if subscribe['url'] == url:
             UA = subscribe.get('User-Agent', '')
+
     response = tool.getResponse(url, custom_user_agent=UA)
     concount = 1
+
+    # 自动重试 n 次
     while concount <= n and not response:
         print('连接出错，正在进行第 ' + str(concount) + ' 次重试，最多重试 ' + str(n) + ' 次...')
-        # print('Lỗi kết nối, đang thử lại '+str(concount)+'/'+str(n)+'...')
         response = tool.getResponse(url)
         concount = concount + 1
         time.sleep(1)
+
     if not response:
         print('获取错误，跳过此订阅')
-        # print('Lỗi khi tải link đăng ký, bỏ qua link đăng ký này')
         print('----------------------------')
-        pass
+        # 返回 None，表示本次订阅获取失败
+        return None
+
+    # 尝试按 UTF-8（兼容 BOM）解码响应内容
     try:
         response_content = response.content
         response_text = response_content.decode('utf-8-sig')  # utf-8-sig 可以忽略 BOM
-        #response_encoding = response.encoding
-    except:
+    except Exception:
         return ''
+
+    # 仅包含空白字符，视为无有效内容
     if response_text.isspace():
         print('没有从订阅链接获取到任何内容')
-        # print('Không nhận được proxy nào từ link đăng ký')
         return None
+
+    # 若解码结果为空字符串，再尝试一次请求并使用默认 UA
     if not response_text:
         response = tool.getResponse(url, custom_user_agent='clashmeta')
         response_text = response.text
+
+    # 若返回内容本身是节点分享链接列表，直接去空行后返回
     if any(response_text.startswith(prefix) for prefix in prefixes):
         response_text = tool.noblankLine(response_text)
         return response_text
+
+    # 若包含 'proxies' 字段，尝试按 Clash YAML 解析
     elif 'proxies' in response_text:
         yaml_content = response.content.decode('utf-8')
-        response_text_no_tabs = yaml_content.replace('\t', ' ') #fuckU
+        # 将制表符替换为空格，避免 YAML 解析报错
+        response_text_no_tabs = yaml_content.replace('\t', ' ')
         yaml = ruamel.yaml.YAML()
         try:
             response_text = dict(yaml.load(response_text_no_tabs))
             return response_text
-        except:
+        except Exception:
+            # YAML 解析失败，则继续后续尝试
             pass
+
+    # 若包含 'outbounds' 字段，尝试按 sing-box JSON 解析
     elif 'outbounds' in response_text:
         try:
             response_text = json.loads(response.text)
             return response_text
-        except:
+        except Exception:
+            # 去掉以 // 开头的行注释后再次尝试解析 JSON
             response_text = re.sub(r'//.*', '', response_text)
             response_text = json.loads(response_text)
             return response_text
+
+    # 若以上均不符合，则尝试按 Base64 文本解码为节点分享内容
     else:
         try:
             response_text = tool.b64Decode(response_text)
             response_text = response_text.decode(encoding="utf-8")
-            # response_text = bytes.decode(response_text,encoding=response_encoding)
-        except:
+        except Exception:
+            # Base64 解码失败，则保持原始文本
             pass
-            # traceback.print_exc()
+
     return response_text
 
 
 def get_content_form_file(url):
+    """
+    从本地文件中读取订阅内容。
+
+    支持：
+        - .yaml：按 Clash YAML 格式解析 proxies 字段并转换为节点分享链接文本。
+        - 其他文件：按 UTF-8 文本读取，并去除空行后返回。
+
+    参数：
+        url: str
+            本地文件路径。
+
+    返回：
+        str: 节点分享链接文本（多行）。
+    """
     print('处理: \033[31m' + url + '\033[0m')
-    # print('Đang tải link đăng ký: \033[31m' + url + '\033[0m')
-    # encoding = tool.get_encoding(url)
-    file_extension = os.path.splitext(url)[1]  # 获取文件的后缀名
-    if file_extension.lower() == '.yaml':
+
+    file_extension = os.path.splitext(url)[1].lower()
+
+    # YAML 文件，按 Clash 订阅格式读取
+    if file_extension == '.yaml':
         with open(url, 'rb') as file:
             content = file.read()
         yaml_data = dict(yaml.safe_load(content))
@@ -364,153 +626,282 @@ def get_content_form_file(url):
         node = '\n'.join(share_links)
         processed_list = tool.noblankLine(node)
         return processed_list
-    else:
-        data = tool.readFile(url)
-        data = bytes.decode(data, encoding='utf-8')
-        data = tool.noblankLine(data)
-        return data
+
+    # 其他文件按文本处理
+    data = tool.readFile(url)
+    data = bytes.decode(data, encoding='utf-8')
+    data = tool.noblankLine(data)
+    return data
 
 
 def save_config(path, nodes):
+    """
+    将最终生成的 nodes 写入配置文件。
+
+    逻辑：
+        - 若 providers 中配置 auto_backup = True：
+            - 旧文件会重命名为 path.YYYYMMDDHHMMSS.bak
+        - 若 path 已存在，先删除再写入。
+        - 写入失败时：
+            - 尝试从 temp_json_data 中读取 save_config_path
+            - 将配置写入 /tmp 下对应文件
+            - 若仍失败则删除该文件并打印错误信息。
+
+    参数：
+        path: str
+            主配置文件保存路径。
+        nodes: Any
+            要写入的配置内容（通常是 dict）。
+    """
     try:
+        # 处理自动备份逻辑
         if 'auto_backup' in providers and providers['auto_backup']:
             now = datetime.now().strftime('%Y%m%d%H%M%S')
             if os.path.exists(path):
                 os.rename(path, f'{path}.{now}.bak')
+
         if os.path.exists(path):
             os.remove(path)
             print(f"已删除文件，并重新保存：\033[33m{path}\033[0m")
-            # print(f"File cấu hình đã được lưu vào: \033[33m{path}\033[0m")
         else:
             print(f"文件不存在，正在保存：\033[33m{path}\033[0m")
-            # print(f"File không tồn tại, đang lưu tại: \033[33m{path}\033[0m")
+
         tool.saveFile(path, json.dumps(nodes, indent=2, ensure_ascii=False))
     except Exception as e:
         print(f"保存配置文件时出错：{str(e)}")
-        # print(f"Lỗi khi lưu file cấu hình: {str(e)}")
-        # 如果保存出错，尝试使用 config_file_path 再次保存
+
+        # 保存出错时，尝试使用临时路径 /tmp/config.json
         config_path = json.loads(temp_json_data).get("save_config_path", "config.json")
         CONFIG_FILE_NAME = config_path
         config_file_path = os.path.join('/tmp', CONFIG_FILE_NAME)
+
         try:
             if os.path.exists(config_file_path):
                 os.remove(config_file_path)
                 print(f"已删除文件，并重新保存：\033[33m{config_file_path}\033[0m")
-                # print(f"File cấu hình đã được lưu vào: \033[33m{config_file_path}\033[0m")
             else:
                 print(f"文件不存在，正在保存：\033[33m{config_file_path}\033[0m")
-                # print(f"File không tồn tại, đang lưu tại: \033[33m{config_file_path}\033[0m")
+
             tool.saveFile(config_file_path, json.dumps(nodes, indent=2, ensure_ascii=False))
-            # print(f"配置文件已保存到 {config_file_path}")
-            # print(f"Tập tin cấu hình đã được lưu vào {config_file_path}")
         except Exception as e:
-            os.remove(config_file_path)
-            print(f"已删除文件：\033[33m{config_file_path}\033[0m")
-            # print(f"Các file đã bị xóa: \033[33m{config_file_path}\033[0m")
+            # 再次失败则删除文件并输出错误
+            if os.path.exists(config_file_path):
+                os.remove(config_file_path)
+                print(f"已删除文件：\033[33m{config_file_path}\033[0m")
             print(f"再次保存配置文件时出错：{str(e)}")
-            # print(f"Lỗi khi lưu lại file cấu hình: {str(e)}")
 
 
 def set_proxy_rule_dns(config):
-    # dns_template = {
-    #     "tag": "remote",
-    #     "address": "tls://1.1.1.1",
-    #     "detour": ""
-    # }
+    """
+    根据路由规则自动生成对应的 DNS 规则，减少 DNS 泄露风险。
+
+    逻辑：
+        - 遍历 route.rules：
+            - 对每一个非 block / dns-out 出站规则：
+                - 若出站为非 direct：
+                    - 从 dns.servers 中复制一个模板（tag = auto_set_outbounds_dns["proxy"]）
+                    - 生成新的 server：tag = outbound + '_dns'，detour = outbound
+                    - 避免重复添加到 outbound_dns 列表
+                - 按 route 规则生成对应的 dns.rules 项：
+                    - type = logical 时，递归处理子 rules
+                    - 其他情况使用 pro_dns_from_route_rules 进行映射
+        - 最后去重 dns.rules，并将新生成的 DNS server 写入 config['dns']['servers']。
+    """
     config_rules = config['route']['rules']
     outbound_dns = []
     dns_rules = config['dns']['rules']
     asod = providers["auto_set_outbounds_dns"]
+
     for rule in config_rules:
-        if rule['outbound'] not in ['block', 'dns-out']:
-            if rule['outbound'] != 'direct':
-                outbounds_dns_template = \
-                    list(filter(lambda server: server['tag'] == asod["proxy"], config['dns']['servers']))[0]
-                dns_obj = outbounds_dns_template.copy()
-                dns_obj['tag'] = rule['outbound'] + '_dns'
-                dns_obj['detour'] = rule['outbound']
-                if dns_obj not in outbound_dns:
-                    outbound_dns.append(dns_obj)
-            if rule.get('type') and rule['type'] == 'logical':
-                dns_rule_obj = {
-                    'type': 'logical',
-                    'mode': rule['mode'],
-                    'rules': [],
-                    'server': rule['outbound'] + '_dns' if rule['outbound'] != 'direct' else asod["direct"]
-                }
-                for _rule in rule['rules']:
-                    child_rule = pro_dns_from_route_rules(_rule)
-                    if child_rule:
-                        dns_rule_obj['rules'].append(child_rule)
-                if len(dns_rule_obj['rules']) == 0:
-                    dns_rule_obj = None
-            else:
-                dns_rule_obj = pro_dns_from_route_rules(rule)
-            if dns_rule_obj:
-                dns_rules.append(dns_rule_obj)
-    # 清除重复规则
+        if rule['outbound'] in ['block', 'dns-out']:
+            continue
+
+        # 非 direct 出站规则，需要为其生成专用 DNS server
+        if rule['outbound'] != 'direct':
+            outbounds_dns_template = list(
+                filter(
+                    lambda server: server['tag'] == asod["proxy"],
+                    config['dns']['servers']
+                )
+            )[0]
+            dns_obj = outbounds_dns_template.copy()
+            dns_obj['tag'] = rule['outbound'] + '_dns'
+            dns_obj['detour'] = rule['outbound']
+            if dns_obj not in outbound_dns:
+                outbound_dns.append(dns_obj)
+
+        # 构造 DNS 规则条目
+        if rule.get('type') and rule['type'] == 'logical':
+            dns_rule_obj = {
+                'type': 'logical',
+                'mode': rule['mode'],
+                'rules': [],
+                'server': rule['outbound'] + '_dns' if rule['outbound'] != 'direct' else asod["direct"]
+            }
+            for _rule in rule['rules']:
+                child_rule = pro_dns_from_route_rules(_rule)
+                if child_rule:
+                    dns_rule_obj['rules'].append(child_rule)
+            if len(dns_rule_obj['rules']) == 0:
+                dns_rule_obj = None
+        else:
+            dns_rule_obj = pro_dns_from_route_rules(rule)
+
+        if dns_rule_obj:
+            dns_rules.append(dns_rule_obj)
+
+    # 去重 DNS 规则
     _dns_rules = []
     for dr in dns_rules:
         if dr not in _dns_rules:
             _dns_rules.append(dr)
     config['dns']['rules'] = _dns_rules
+
+    # 将为各出站生成的 DNS server 追加到 config['dns']['servers']
     config['dns']['servers'].extend(outbound_dns)
 
 
 def pro_dns_from_route_rules(route_rule):
-    dns_route_same_list = ["inbound", "ip_version", "network", "protocol", 'domain', 'domain_suffix', 'domain_keyword',
-                           'domain_regex', 'geosite', "source_geoip", "source_ip_cidr", "source_port",
-                           "source_port_range", "port", "port_range", "process_name", "process_path", "package_name",
-                           "user", "user_id", "clash_mode", "invert"]
+    """
+    将单条 route 规则映射为对应的 dns 规则条目。
+
+    只拷贝与 DNS 匹配条件相关的字段，
+    并根据 route_rule['outbound'] 设置对应的 server。
+
+    参数：
+        route_rule: dict
+            route.rules 中的一条规则。
+
+    返回：
+        dict 或 None:
+            映射后的 dns 规则，若无匹配字段则返回 None。
+    """
+    dns_route_same_list = [
+        "inbound", "ip_version", "network", "protocol",
+        "domain", "domain_suffix", "domain_keyword", "domain_regex", "geosite",
+        "source_geoip", "source_ip_cidr", "source_port", "source_port_range",
+        "port", "port_range", "process_name", "process_path", "package_name",
+        "user", "user_id", "clash_mode", "invert"
+    ]
+
     dns_rule_obj = {}
     for key in route_rule:
         if key in dns_route_same_list:
             dns_rule_obj[key] = route_rule[key]
+
     if len(dns_rule_obj) == 0:
         return None
+
     if route_rule.get('outbound'):
-        dns_rule_obj['server'] = route_rule['outbound'] + '_dns' if route_rule['outbound'] != 'direct' else \
-            providers["auto_set_outbounds_dns"]['direct']
+        dns_rule_obj['server'] = (
+            route_rule['outbound'] + '_dns'
+            if route_rule['outbound'] != 'direct'
+            else providers["auto_set_outbounds_dns"]['direct']
+        )
+
     return dns_rule_obj
 
 
 def pro_node_template(data_nodes, config_outbound, group):
+    """
+    根据当前出站模板 config_outbound 对 data_nodes 做过滤，
+    并返回过滤后节点的 tag 列表。
+
+    参数：
+        data_nodes: list[dict]
+            某个分组下的节点列表。
+        config_outbound: dict
+            模板中定义的出站对象（可能包含 filter 字段）。
+        group: str
+            当前分组名称（用于 nodes_filter 中的 for 匹配）。
+
+    返回：
+        list[str]: 过滤后节点的 tag 字符串列表。
+    """
     if config_outbound.get('filter'):
         data_nodes = nodes_filter(data_nodes, config_outbound['filter'], group)
     return [node.get('tag') for node in data_nodes]
 
 
 def combin_to_config(config, data):
+    """
+    将根据订阅生成的节点数据 data 合并到配置模板 config 中。
+
+    主要工作：
+        1. 处理模板中的 selector/urltest 等出站引用：
+           - 支持 {group} / {all} 占位符展开为实际节点 tag 列表。
+           - 若某个出站在展开后无任何节点，则降级为 direct。
+        2. 将 data 中的真实节点追加到 config['outbounds'] 中。
+        3. 若 providers["auto_set_outbounds_dns"] 配置完整，自动根据 route 生成 DNS 规则。
+        4. 针对 type = "wireguard" 的出站：
+           - 提取到单独的 endpoints 字段中。
+           - 并从 outbounds 中移除 wireguard 类型，满足部分模板要求。
+
+    参数：
+        config: dict
+            配置模板（包含 outbounds、route、dns 等）。
+        data: dict[str, list[dict]]
+            订阅生成的节点数据，key 为分组名，value 为节点列表。
+
+    返回：
+        dict: 合并后的完整配置。
+    """
     config_outbounds = config["outbounds"] if config.get("outbounds") else None
     i = 0
+
+    # 先处理带 subgroup 标记的分组，对 Proxy 进行分组插入
     for group in data:
         if 'subgroup' in group:
             i += 1
             for out in config_outbounds:
-                if out.get("outbounds"):
-                    if out['tag'] == 'Proxy':
-                        out["outbounds"] = [out["outbounds"]] if isinstance(out["outbounds"], str) else out["outbounds"]
-                        if '{all}' in out["outbounds"]:
-                            index_of_all = out["outbounds"].index('{all}')
-                            out["outbounds"][index_of_all] = (group.rsplit("-", 1)[0]).rsplit("-", 1)[-1]
-                            i += 1
-                        else:
-                            out["outbounds"].insert(i, (group.rsplit("-", 1)[0]).rsplit("-", 1)[-1])
-            new_outbound = {'tag': (group.rsplit("-", 1)[0]).rsplit("-", 1)[-1], 'type': 'selector', 'outbounds': ['{' + group + '}']}
+                if out.get("outbounds") and out['tag'] == 'Proxy':
+                    out["outbounds"] = (
+                        [out["outbounds"]]
+                        if isinstance(out["outbounds"], str)
+                        else out["outbounds"]
+                    )
+                    # 处理 {all} 占位，替换为当前 subgroup 标记
+                    if '{all}' in out["outbounds"]:
+                        index_of_all = out["outbounds"].index('{all}')
+                        out["outbounds"][index_of_all] = (
+                            group.rsplit("-", 1)[0]
+                        ).rsplit("-", 1)[-1]
+                        i += 1
+                    else:
+                        out["outbounds"].insert(
+                            i,
+                            (group.rsplit("-", 1)[0]).rsplit("-", 1)[-1]
+                        )
+
+            new_outbound = {
+                'tag': (group.rsplit("-", 1)[0]).rsplit("-", 1)[-1],
+                'type': 'selector',
+                'outbounds': ['{' + group + '}']
+            }
+            # 在倒数第二个位置插入新的 selector 出站
             config_outbounds.insert(-2, new_outbound)
+
+            # 如果 group 不包含 'subgroup'，原逻辑会为 Proxy 追加 '{group}'
             if 'subgroup' not in group:
                 for out in config_outbounds:
-                    if out.get("outbounds"):
-                        if out['tag'] == 'Proxy':
-                            out["outbounds"] = [out["outbounds"]] if isinstance(out["outbounds"], str) else out["outbounds"]
-                            out["outbounds"].append('{' + group + '}')
+                    if out.get("outbounds") and out['tag'] == 'Proxy':
+                        out["outbounds"] = (
+                            [out["outbounds"]]
+                            if isinstance(out["outbounds"], str)
+                            else out["outbounds"]
+                        )
+                        out["outbounds"].append('{' + group + '}')
+
     temp_outbounds = []
     if config_outbounds:
-        # 获取 "type": "direct"的"tag"值
-        direct_item = next((item for item in config_outbounds if item.get('type') == 'direct'), None)
-        # 提前处理all模板
+        # 找到 type = 'direct' 的出站，用于占位时兜底
+        direct_item = next(
+            (item for item in config_outbounds if item.get('type') == 'direct'),
+            None
+        )
+
+        # 预处理包含 {all} 的模板，避免展开重复
         for po in config_outbounds:
-            # 处理出站
             if po.get("outbounds"):
                 if '{all}' in po["outbounds"]:
                     o1 = []
@@ -522,90 +913,151 @@ def combin_to_config(config, data):
                         else:
                             o1.append(item)
                     po['outbounds'] = o1
+
                 t_o = []
                 check_dup = []
+
                 for oo in po["outbounds"]:
-                    # 避免添加重复节点
+                    # 避免重复节点
                     if oo in check_dup:
                         continue
                     else:
                         check_dup.append(oo)
-                    # 处理模板
+
+                    # 模板占位符：{group} 或 {all}
                     if oo.startswith('{') and oo.endswith('}'):
-                        oo = oo[1:-1]
-                        if data.get(oo):
-                            nodes = data[oo]
-                            t_o.extend(pro_node_template(nodes, po, oo))
+                        oo_key = oo[1:-1]
+                        if data.get(oo_key):
+                            nodes = data[oo_key]
+                            t_o.extend(pro_node_template(nodes, po, oo_key))
                         else:
-                            if oo == 'all':
+                            if oo_key == 'all':
+                                # {all} 表示展开所有分组
                                 for group in data:
                                     nodes = data[group]
                                     t_o.extend(pro_node_template(nodes, po, group))
                     else:
+                        # 普通字符串，直接保留
                         t_o.append(oo)
+
+                # 若展开后该出站无任何节点，降级为 direct
                 if len(t_o) == 0:
-                    t_o.append(direct_item['tag'])  # outbound内容为空时 添加直连 direct
-                    print('发现 {} 出站下的节点数量为 0 ，会导致sing-box无法运行，请检查config模板是否正确。'.format(
-                        po['tag']))
-                    # print('Sing-Box không chạy được vì không tìm thấy bất kỳ proxy nào trong outbound của {}. Vui lòng kiểm tra xem mẫu cấu hình có đúng không!!'.format(po['tag']))
-                    """
-                    config_path = json.loads(temp_json_data).get("save_config_path", "config.json")
-                    CONFIG_FILE_NAME = config_path
-                    config_file_path = os.path.join('/tmp', CONFIG_FILE_NAME)
-                    if os.path.exists(config_file_path):
-                        os.remove(config_file_path)
-                        print(f"已删除文件：{config_file_path}")
-                        # print(f"Các tập tin đã bị xóa: {config_file_path}")
-                    sys.exit()
-                    """
+                    t_o.append(direct_item['tag'])
+                    print(
+                        '发现 {} 出站下的节点数量为 0 ，会导致sing-box无法运行，请检查config模板是否正确。'
+                        .format(po['tag'])
+                    )
+
                 po['outbounds'] = t_o
+
+                # 出站模板中的 filter 字段已使用完毕，需删除
                 if po.get('filter'):
                     del po['filter']
+
+    # 将 data 中的真实节点累加到临时 outbounds 列表
     for group in data:
         temp_outbounds.extend(data[group])
+
+    # 最终 outbounds = 模板中的出站 + 订阅生成的真实节点
     config['outbounds'] = config_outbounds + temp_outbounds
-    # 自动配置路由规则到dns规则，避免dns泄露
+
+    # 自动根据 route 规则生成对应 DNS 规则，避免 DNS 泄露
     dns_tags = [server.get('tag') for server in config['dns']['servers']]
     asod = providers.get("auto_set_outbounds_dns")
-    if asod and asod.get('proxy') and asod.get('direct') and asod['proxy'] in dns_tags and asod['direct'] in dns_tags:
+    if (
+        asod
+        and asod.get('proxy')
+        and asod.get('direct')
+        and asod['proxy'] in dns_tags
+        and asod['direct'] in dns_tags
+    ):
         set_proxy_rule_dns(config)
-    # 提取 wireguard 类型内容
-    wireguard_items = [item for item in config['outbounds'] if item.get('type') == 'wireguard']
+
+    # 提取所有 wireguard 类型出站，单独生成 endpoints 字段
+    wireguard_items = [
+        item for item in config['outbounds'] if item.get('type') == 'wireguard'
+    ]
     if wireguard_items:
         endpoints = []
         for item in wireguard_items:
             endpoints.append(item)
+
+        # 使用 OrderedDict 确保 'endpoints' 插入到 'outbounds' 之后
         new_config = OrderedDict()
         for key, value in config.items():
             new_config[key] = value
-            if key == 'outbounds':  # 在 outbounds 后面插入 endpoint
+            if key == 'outbounds':
                 new_config['endpoints'] = endpoints
+
         config = new_config
-        # 更新 outbounds，移除 wireguard 类型
-        config['outbounds'] = [item for item in config['outbounds'] if item.get('type') != 'wireguard']
+
+        # 从 outbounds 中移除 wireguard 类型出站
+        config['outbounds'] = [
+            item for item in config['outbounds'] if item.get('type') != 'wireguard'
+        ]
+
     return config
 
 
 def updateLocalConfig(local_host, path):
+    """
+    通过 sing-box 本地面板 API 更新配置文件路径。
+
+    参数：
+        local_host: str
+            本地 API 地址，例如 "http://127.0.0.1:9090"。
+        path: str
+            要加载的配置文件路径。
+    """
     header = {
         'Content-Type': 'application/json'
     }
-    r = requests.put(local_host + '/configs?force=false', json={"path": path}, headers=header)
+    r = requests.put(
+        local_host + '/configs?force=false',
+        json={"path": path},
+        headers=header
+    )
     print(r.text)
 
 
 def display_template(tl):
+    """
+    在终端中以彩色输出所有配置模板名称。
+
+    参数：
+        tl: list[str]
+            模板名称列表。
+    """
     print_str = ''
     for i in range(len(tl)):
-        print_str += loop_color('{index}、{name} '.format(index=i + 1, name=tl[i]))
+        print_str += loop_color(
+            '{index}、{name} '.format(index=i + 1, name=tl[i])
+        )
     print(print_str)
 
 
 def select_config_template(tl, selected_template_index=None):
+    """
+    交互式选择配置模板索引。
+
+    优先级：
+        1. 若命令行参数 args.template_index 不为空，直接使用；
+        2. 否则，提示用户输入序号：
+            - 回车：默认选择第一个模板（索引 0）
+            - 输入非法数字或越界：提示错误并递归重试。
+
+    参数：
+        tl: list[str]
+            模板名称列表。
+        selected_template_index: Any
+            保留参数（当前逻辑未使用）。
+
+    返回：
+        int: 选中的模板索引（从 0 开始）。
+    """
     if args.template_index is not None:
         uip = args.template_index
     else:
-        # print ('Nhập số để chọn mẫu cấu hình tương ứng (nhấn Enter để chọn mẫu cấu hình đầu tiên theo mặc định): ')
         uip = input('输入序号，载入对应config模板（直接回车默认选第一个配置模板）：')
         try:
             if uip == '':
@@ -613,19 +1065,34 @@ def select_config_template(tl, selected_template_index=None):
             uip = int(uip)
             if uip < 1 or uip > len(tl):
                 print('输入了错误信息！重新输入')
-                # print('Nhập thông tin không chính xác! Vui lòng nhập lại')
                 return select_config_template(tl)
             else:
                 uip -= 1
-        except:
+        except Exception:
             print('输入了错误信息！重新输入')
-            # print('Nhập thông tin không chính xác! Vui lòng nhập lại')
             return select_config_template(tl)
     return uip
 
 
-# 自定义函数，用于解析参数为 JSON 格式
+# 自定义函数，用于解析命令行参数为 JSON 格式
 def parse_json(value):
+    """
+    argparse 的辅助函数：
+    将命令行传入的字符串解析为 JSON 对象。
+
+    示例：
+        --config '{"a": 1, "b": 2}'
+
+    参数：
+        value: str
+            命令行传进来的字符串。
+
+    返回：
+        Any: json.loads 解析结果。
+
+    异常：
+        若字符串不是合法 JSON，则抛出 argparse.ArgumentTypeError。
+    """
     try:
         return json.loads(value)
     except json.JSONDecodeError:
@@ -633,31 +1100,38 @@ def parse_json(value):
 
 def generate_config_from_providers(providers_data: dict):
     """
-    给 Vercel / API 用的封装函数：
-    - 输入: providers_data (从 SUB_CONFIG 或 URL 传进来的 dict)
-    - 输出: 生成好的 sing-box/clash 配置 (dict 或 list)
+    给 Vercel / API 使用的封装函数。
+
+    输入:
+        providers_data: dict
+            从 SUB_CONFIG 或 URL 传进来的完整配置，
+            结构与原来的 providers.json 一致。
+
+    输出:
+        final_config: dict 或 list
+            - 当 Only-nodes = true 时：返回节点列表（list）
+            - 当 Only-nodes = false 时：返回完整 sing-box 配置（dict）
     """
     if not isinstance(providers_data, dict):
         raise ValueError("providers_data 必须是 dict")
 
-    # 这里沿用你原来的全局变量用法
+    # 仍沿用原脚本中的全局 providers 变量
     global providers
     providers = providers_data
 
-    # 初始化解析器（和原脚本一样）
+    # 初始化各协议解析器
     init_parsers()
 
-    # 1) 处理模板 config_template（如果需要用模板）
+    # 1) 处理 config_template （可为远程 URL 或本地路径）
     config = None
     config_template_path = (providers.get("config_template") or "").strip()
 
     if config_template_path:
-        # 有配置模板：可以是本地路径，也可以是远程 URL
+        # 远程模板地址（HTTP / HTTPS）
         if config_template_path.startswith("http://") or config_template_path.startswith("https://"):
-            # 远程模板
             resp = requests.get(config_template_path, timeout=10)
             resp.raise_for_status()
-            # 尝试按 JSON 解析，不行再按 YAML
+            # 优先按 JSON 解析，不行再尝试 YAML
             try:
                 config = resp.json()
             except Exception:
@@ -666,72 +1140,80 @@ def generate_config_from_providers(providers_data: dict):
                 except Exception as e:
                     raise ValueError(f"读取远程模板失败: {e}")
         else:
-            # 本地文件模板
+            # 本地模板文件
             config = load_json(config_template_path)
 
-    # 2) 处理订阅，生成节点
+    # 2) 处理订阅列表，生成各订阅下的节点
     if "subscribes" not in providers or not providers["subscribes"]:
         raise ValueError("providers 中缺少 subscribes 字段，或为空")
 
     nodes = process_subscribes(providers["subscribes"])
 
-    # 3) 只返回节点，还是套用模板
+    # 3) 根据 Only-nodes 决定返回节点列表，还是结合模板生成完整配置
     if providers.get("Only-nodes"):
-        # 只要节点列表
+        # 只返回节点列表（不套模板）
         combined_contents = []
         for sub_tag, contents in nodes.items():
             for content in contents:
                 combined_contents.append(content)
         final_config = combined_contents
     else:
-        # 需要完整配置，但没有模板 → 给一个明确报错，而不是让 None 去下标
+        # 需要完整配置，但没有模板 → 在无交互环境直接报错说明
         if config is None:
             raise ValueError(
                 "config_template 为空且 Only-nodes 为 false："
                 "在无交互环境（如 Vercel）下无法选择模板。"
                 "请在 SUB_CONFIG 中提供 config_template，或把 Only-nodes 设为 true。"
             )
-        # 用你原来的组合逻辑
+        # 使用原有逻辑，将节点合并入模板
         final_config = combin_to_config(config, nodes)
 
-    # 不在这里写文件，直接返回给 API
+    # 不在此处写文件，由上层 API 决定如何使用返回结果
     return final_config
 
+
 if __name__ == '__main__':
+    # 本地/命令行模式入口（保留原逻辑）
     init_parsers()
     parser = argparse.ArgumentParser()
-    parser.add_argument('--temp_json_data', type=parse_json, help='临时内容')
+    parser.add_argument('--temp_json_data', type=parse_json, help='临时内容（JSON 字符串）')
     parser.add_argument('--template_index', type=int, help='模板序号')
-    parser.add_argument('--gh_proxy_index', type=str, help='github加速链接')
+    parser.add_argument('--gh_proxy_index', type=str, help='GitHub 加速链接索引')
     args = parser.parse_args()
+
     temp_json_data = args.temp_json_data
     gh_proxy_index = args.gh_proxy_index
+
+    # 1) 加载 providers：优先使用命令行传入的 JSON，其次读本地 providers.json
     if temp_json_data and temp_json_data != '{}':
         providers = json.loads(temp_json_data)
     else:
-        providers = load_json('providers.json')  # 加载本地 providers.json
+        providers = load_json('providers.json')
+
+    # 2) 加载配置模板（支持远程 config_template，也支持本地交互选择）
     if providers.get('config_template'):
+        # 远程模板模式
         config_template_path = providers['config_template']
         print('选择: \033[33m' + config_template_path + '\033[0m')
-        # print ('Mẫu cấu hình sử dụng: \033[33m' + template_list[uip] + '.json\033[0m')
         response = requests.get(providers['config_template'])
         response.raise_for_status()
         config = response.json()
     else:
+        # 本地模板交互选择模式
         template_list = get_template()
         if len(template_list) < 1:
             print('没有找到模板文件')
-            # print('Không tìm thấy file mẫu')
             sys.exit()
         display_template(template_list)
         uip = select_config_template(template_list, selected_template_index=args.template_index)
         config_template_path = 'config_template/' + template_list[uip] + '.json'
         print('选择: \033[33m' + template_list[uip] + '.json\033[0m')
-        # print ('Mẫu cấu hình sử dụng: \033[33m' + template_list[uip] + '.json\033[0m')
         config = load_json(config_template_path)
+
+    # 3) 根据 subscribes 拉取所有机场节点
     nodes = process_subscribes(providers["subscribes"])
 
-    # 处理github加速
+    # 4) 处理 GitHub 加速（对 config["route"]["rule_set"] 中的 URL 进行替换）
     if hasattr(args, 'gh_proxy_index') and str(args.gh_proxy_index).isdigit():
         gh_proxy_index = int(args.gh_proxy_index)
         print(gh_proxy_index)
@@ -740,16 +1222,19 @@ if __name__ == '__main__':
         for item, new_url in zip(config["route"]["rule_set"], new_urls):
             item["url"] = new_url
 
-
+    # 5) 根据 Only-nodes 决定输出形式（节点列表 / 完整配置）
     if providers.get('Only-nodes'):
         combined_contents = []
         for sub_tag, contents in nodes.items():
-            # 遍历每个机场的内容
+            # 遍历每个机场的节点内容并扁平化
             for content in contents:
-                # 将内容添加到新列表中
                 combined_contents.append(content)
-        final_config = combined_contents  # 只返回节点信息
+        final_config = combined_contents
     else:
-        final_config = combin_to_config(config, nodes)  # 节点信息添加到模板
+        # 将节点信息合并到模板 config 中
+        final_config = combin_to_config(config, nodes)
+
+    # 6) 保存配置文件到 providers["save_config_path"]
     save_config(providers["save_config_path"], final_config)
-    # updateLocalConfig('http://127.0.0.1:9090',providers['save_config_path'])
+    # 如果需要，可启用本地面板自动更新：
+    # updateLocalConfig('http://127.0.0.1:9090', providers['save_config_path'])

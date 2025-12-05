@@ -28,27 +28,31 @@
     "rule_set": [
       {
         "tag": "ads",
-        "type": "local",
+        "type": "remote",
         "format": "binary",
-        "path": "/Users/CHQ/Library/Group Containers/group.io.nekohasekai.sfavt/Library/Caches/Working/rules/category-ads-all.srs"
+        "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/category-ads-all.srs",
+        "download_detour": "🎯 全球直连"
       },
       {
         "tag": "cnip",
-        "type": "local",
+        "type": "remote",
         "format": "binary",
-        "path": "/Users/CHQ/Library/Group Containers/group.io.nekohasekai.sfavt/Library/Caches/Working/rules/cnip.srs"
+        "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geoip/cn.srs",
+        "download_detour": "🎯 全球直连"
       },
       {
         "tag": "cn",
-        "type": "local",
+        "type": "remote",
         "format": "binary",
-        "path": "/Users/CHQ/Library/Group Containers/group.io.nekohasekai.sfavt/Library/Caches/Working/rules/cnip.srs"
+        "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/cn.srs",
+        "download_detour": "🎯 全球直连"
       },
       {
         "tag": "games-cn",
-        "type": "local",
+        "type": "remote",
         "format": "binary",
-        "path": "/Users/CHQ/Library/Group Containers/group.io.nekohasekai.sfavt/Library/Caches/Working/rules/category-games-cn.srs"
+        "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/category-games-cn.srs",
+        "download_detour": "🎯 全球直连"
       }
     ],
     "final": "🔐 PROXY",
