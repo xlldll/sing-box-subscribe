@@ -1,0 +1,68 @@
+{
+  "route": {
+    "rules": [
+      {
+        "inbound": ["tun-in", "dns-in"],
+        "action": "sniff"
+      },
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "port": 53
+          },
+          { "protocol": ["dns"] }
+        ],
+        "action": "hijack-dns"
+      },
+      {
+        "ip_is_private": true,
+        "outbound": "🎯 全球直连"
+      },
+      {
+        "rule_set": ["ais"],
+        "outbound": "🔐 PROXY"
+      },
+      {
+        "rule_set": ["cnip"],
+        "outbound": "🎯 全球直连"
+      }
+    ],
+    "rule_set": [
+      {
+        "tag": "ais",
+        "type": "remote",
+        "format": "binary",
+        "url": "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/category-ai-!cn.srs",
+        "download_detour": "🎯 全球直连"
+      },
+      {
+        "tag": "ads",
+        "type": "local",
+        "format": "binary",
+        "path": "/Users/CHQ/Library/Group Containers/group.io.nekohasekai.sfavt/Library/Caches/Working/rules/category-ads-all.srs"
+      },
+      {
+        "tag": "cnip",
+        "type": "local",
+        "format": "binary",
+        "path": "/Users/CHQ/Library/Group Containers/group.io.nekohasekai.sfavt/Library/Caches/Working/rules/cnip.srs"
+      },
+      {
+        "tag": "cn",
+        "type": "local",
+        "format": "binary",
+        "path": "/Users/CHQ/Library/Group Containers/group.io.nekohasekai.sfavt/Library/Caches/Working/rules/cnip.srs"
+      },
+      {
+        "tag": "games-cn",
+        "type": "local",
+        "format": "binary",
+        "path": "/Users/CHQ/Library/Group Containers/group.io.nekohasekai.sfavt/Library/Caches/Working/rules/category-games-cn.srs"
+      }
+    ],
+    "final": "🔐 PROXY",
+    "auto_detect_interface": true
+  }
+}

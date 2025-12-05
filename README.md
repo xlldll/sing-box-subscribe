@@ -2,403 +2,342 @@
 
 [中文](https://github.com/Toperlock/sing-box-subscribe/blob/main/README.md) | [EN](https://github.com/Toperlock/sing-box-subscribe/blob/main/instructions/README.md)
 
-根据配置模板生成 sing-box 使用的 `config.json`，主要用于将机场订阅节点添加到 config，对使用 `clash_mode` 的配置才有意义。
+请注意：这是本人 FORK 修改的版本，加入了自己使用的特性。
 
-不适合完全不了解 sing-box 配置文件的人使用，最少要知道什么是出站、dns server、dns规则、路由规则。最好了解 clash 的分组方式。
+# 如何使用
 
-请查看：[https://sing-box.sagernet.org/zh/configuration](https://sing-box.sagernet.org/zh/configuration)。
+- pip install -r requirements.txt
 
-## 特色
 
-**sing-box网页版解析器**
+```python
 
-用自己搭建的网站实现配置热更新，可充当 sing-box 的 remote link
+"""
+脚本名称：main.py
 
-比如我搭建的网站 [https://sing-box-subscribe.vercel.app](https://sing-box-subscribe.vercel.app), 在网站后面添加 `/config/URL_LINK`, 此处 `URL_LINK` 指订阅链接
+核心作用：
+多机场订阅总控脚本：
+1）从多个订阅（subscribes）批量拉取/解析节点
+2）按配置规则给节点加前缀、加 emoji、过滤节点
+3）把节点按“机场分组 tag”组织成字典
+4）将节点合并进 sing-box 配置模板，自动生成最终 config.json
+5）支持“只输出节点数组”或“输出完整 sing-box 配置”两种模式
 
-> 在 sing-box 中输入此格式的链接，你可能需要在 `URL_LINK` 前面加 `url=`
+适用场景： - 你有多个机场订阅（Clash / v2ray / sing-box / 各种分享链接 混在一起） - 想要统一收集 → 统一命名 → 统一过滤 → 自动写入 sing-box 模板 - 最终得到一个给 PuerNya 内核使用的 config.json（包含 outbounds / endpoints / dns / route 等）
+
+主要依赖与目录约定： - parsers/ 存放各种协议解析器，每个协议一个 xxx.py，内含 parse() 函数
+· 例如：vmess.py / vless.py / trojan.py / hysteria2.py / wireguard.py 等
+· 本脚本启动时自动 import 全部解析模块，建立 parsers_mod 映射表 - config_template/ 存放 sing-box 配置模板（\*.json）
+· 模板中通常预先写好：inbounds、dns、route、基础 outbounds 框架、{all} 占位等 - providers.json 主配置文件（如果没传入 --temp_json_data，就从这里加载）
+· 定义全局选项 + 多个订阅源（subscribes） - 其它模块
+· tool 自己封装的工具函数（读文件、HTTP 请求、去重、字符串处理等）
+· api.app.TEMP_DIR Web UI / 本地 API 使用的临时目录
+· parsers.clash2base64.clash2v2ray 用于把 Clash 代理条目转成标准 v2ray 分享链接
+· gh_proxy_helper.set_gh_proxy 预留的 GitHub 加速设置函数（本文件中目前未直接调用）
+
+一、启动入口与命令行参数：
+if **name** == '**main**':
+1）init_parsers() - 扫描 parsers 目录，动态 import 每个 .py 文件 - 将模块名（不含扩展名）作为 key，模块对象作为 value，存入 parsers_mod - 之后 get_parser() 会根据协议字符串从 parsers_mod 中找到对应的 parse 函数
+
+        2）argparse 解析参数：
+            --temp_json_data   传入一段 JSON 字符串（作为临时 providers 配置）
+            --template_index   本地模板序号（从 0 开始，或用户输入数字选择）
+            --gh_proxy_index   预留的 GitHub 加速入口（当前版本未显式使用）
+
+        3）加载 providers 配置：
+            - 如果传入了 --temp_json_data 且不为空：
+                providers = json.loads(temp_json_data)
+            - 否则：
+                providers = load_json('providers.json')
+            - load_json(path) 只是读文件 + json.loads
+
+        4）选择配置模板（config_template）：
+            - 情况 A：providers 里给出了远程模板 URL（config_template 字段）
+                · 打印选择信息
+                · requests.get() 拉取远程 JSON 模板，作为 config
+            - 情况 B：本地模板模式
+                · get_template() 列出 config_template/ 下所有 .json 文件（去掉扩展名）
+                · display_template() 把可用模板打印出来
+                · select_config_template()：
+                    - 如果命令行给了 template_index，则直接用
+                    - 否则让用户交互输入序号（回车默认选择第一个）
+                · 根据选择的模板名加载本地 JSON 文件，作为 config
+
+二、订阅处理主流程：process_subscribes()
+
+    def process_subscribes(subscribes):
+        - 输入：providers["subscribes"] 列表，每个元素描述一个机场订阅，例如：
+            {
+                "tag": "某机场",
+                "url": "订阅链接或本地文件或 sub://base64...",
+                "enabled": true/false,
+                "prefix": "[前缀]",
+                "emoji": true/false,
+                "ex-node-name": "关键字1,关键字2|支持正则",
+                "subgroup": "可选子分组名",
+                ...
+            }
+        - 输出：nodes 字典，结构类似：
+            {
+                "机场A": [node1, node2, ...],
+                "机场B-sub1-subgroup": [node3, node4, ...],
+                ...
+            }
+
+    逻辑步骤：
+        1）初始化 nodes = {}
+        2）遍历 subscribes：
+            - 如果存在 enabled 且为 False：跳过
+            - 如果 url 中包含特定黑名单域名（如 sing-box-subscribe-doraemon.vercel.app）：跳过
+            - 调用 get_nodes(subscribe['url']) 获取该订阅下的所有节点对象列表
+            - 如果 _nodes 非空：
+                a. add_prefix(_nodes, subscribe)
+                    · 如果 subscribe['prefix'] 存在，则给每个 node['tag'] 前面加上前缀
+                    · 若 node 有 detour 字段，也同步加前缀
+                b. add_emoji(_nodes, subscribe)
+                    · 如果 subscribe['emoji'] 为真：
+                        - 使用 tool.rename() 对每个 tag 做 emoji / 重命名处理
+                        - detour 字段同样处理
+                c. nodefilter(_nodes, subscribe)
+                    · 如果订阅配置中有 ex-node-name：
+                        - 用正则 re.split(r'[,\|]', ...) 拆分出多个排除关键字
+                        - 如果节点名中包含任一关键字，就从列表中移除该节点
+                d. subgroup 处理：
+                    · 若 subscribe['subgroup'] 存在，会把 tag 修改为：
+                      原tag + '-' + subgroup + '-subgroup'
+                      用于后续按子分组再区分节点组
+                e. 将 _nodes 追加到 nodes[订阅 tag] 里：
+                    - 若该 tag 还没有对应键，则先创建空列表
+                    - 然后 nodes[tag] += _nodes
+            - 否则打印“没有在此订阅下找到节点，跳过”
+
+        3）tool.proDuplicateNodeName(nodes)
+            - 对所有节点名做去重处理（避免 tag 冲突/重复）
+        4）返回 nodes 字典
+
+三、单个订阅内容的解析：get_nodes() + parse_content()
+
+    def get_nodes(url):
+        1）如果 url 以 'sub://' 开头：
+            - 去掉前缀 'sub://'
+            - 对剩余部分做 Base64 解码得到真实订阅 URL
+        2）用 urlparse(url) 判断是否含有 scheme（http/https 等）
+            - 如果没有 scheme：
+                · 尝试认为它是 Base64 编码的纯内容：
+                    content = tool.b64Decode(url).decode('utf-8')
+                    data = parse_content(content)
+                · 若 Base64 解码失败：
+                    content = get_content_form_file(url)
+                    （从本地文件读取订阅内容）
+            - 如果有 scheme（http/https 等）：
+                · content = get_content_from_url(url)
+
+        3）处理 content 类型：
+            - 若 content 是 dict 且包含 'proxies'：
+                · 视为 Clash 配置，遍历 proxies，用 clash2v2ray(proxy) 转成 v2ray 分享链接
+                · 把这些分享链接拼接成文本，再走 parse_content() 统一解析
+            - 若 content 是 dict 且包含 'outbounds'：
+                · 视为已是 sing-box 配置，过滤掉 type 为 selector/urltest/direct/block/dns 的出站
+                · 剩余 outbounds 直接作为节点列表返回
+            - 其它情况（普通订阅文本 / share link 列表）：
+                · 直接调用 parse_content(content)
+
+    def parse_content(content):
+        - 把内容按行 split，逐行处理：
+            · 去掉空行
+            · 通过 get_parser(t) 判断这行链接属于哪种协议（vmess/vless/...）
+            · factory = 对应协议模块 parsers_mod[proto].parse
+            · 调用 factory(t) 把链接解析为一个 node 对象
+            · 如果返回的是 tuple（用于 shadowtls 一类一连二出站的特殊场景），就把两个都加入列表
+            · 普通情况下直接 append(node)
+        - 返回节点对象列表 nodelist
+
+    def get_parser(node):
+        - 使用 tool.get_protocol(node) 解析出协议名 proto
+        - 若 providers['exclude_protocol'] 配置了需要排除的协议集合：
+            · 按逗号/空格拆分
+            · 把 hy2 规范化为 hysteria2
+            · 如果 proto 在排除列表中，则返回 None（不解析此节点）
+        - 如果 proto 不在 parsers_mod（未实现解析器），返回 None
+        - 否则返回 parsers_mod[proto].parse
+
+    def get_content_from_url(url, n=10):
+        - 打印当前处理的 URL
+        - 如果 url 本身就是一个单节点分享链接（前缀在 vmess:// / vless:// / ss:// / trojan:// / hysteria2:// / wireguard:// 等列表内）：
+            · 直接将该字符串用于后续处理（视为单节点文本）
+        - 否则：
+            · 找到 providers["subscribes"] 中对应 url 的条目，看是否设定了自定义 User-Agent
+            · 用 tool.getResponse(url, custom_user_agent=UA) 请求订阅
+            · 最多重试 n 次（默认 10 次），请求失败则稍等再试
+            · 若一直失败则返回 None
+        - 请求成功时，把响应内容做 noblankLine 处理后返回字符串
+
+四、节点过滤与分组：nodes_filter() + action_keywords()
+
+    def nodes_filter(nodes, filter, group):
+        - 用于对某一出站组内部的节点按配置条件过滤
+        - filter 的结构类似：
+            "filter":[
+                {"action":"include","keywords":["香港","HK"]},
+                {"action":"exclude","keywords":["IPLC","IEPL"]},
+                ...
+            ]
+        - 遍历 filter 列表：
+            · 如果某条规则 a 带有 'for' 字段，且当前 group 不在 a['for'] 中，则跳过（该规则仅对特定分组生效）
+            · 否则调用 action_keywords(nodes, a['action'], a['keywords'])
+        - 返回过滤后的 nodes 列表
+
+    def action_keywords(nodes, action, keywords):
+        - 支持 action = 'include' 或 'exclude'
+        - 关键逻辑：
+            · 把 keywords 列表用 '|' 合并成一个正则模式 combined_pattern
+            · 若关键字列表为空或都是空白，直接返回原 nodes
+            · compiled_pattern = re.compile(combined_pattern)
+            · 对每个 node['tag'] 做正则匹配：
+                - include：只保留匹配到的一部分
+                - exclude：移除匹配到的一部分
+        - 返回过滤后的节点列表
+
+    def add_prefix(nodes, subscribe):
+        - 若订阅定义了 prefix，则将 prefix 加到：
+            · 每个 node['tag'] 前面
+            · 每个 node['detour'] 前面（若存在）
+
+    def add_emoji(nodes, subscribe):
+        - 若订阅定义了 emoji 为 True：
+            · 调用 tool.rename() 对 node['tag'] 做 emoji/改名处理
+            · node['detour'] 同样处理
+
+    def nodefilter(nodes, subscribe):
+        - 若订阅中配置了 ex-node-name：
+            · 用正则 re.split(r'[,\|]', ex-node-name) 将排除关键词拆成列表
+            · 遍历节点副本，对任一节点：
+                - 如果 tag 中包含某个排除关键字，就从原列表中删除该节点
+
+五、把节点合成最终 sing-box 配置：combin_to_config()
+
+    输入：
+        config  —— 已加载好的 sing-box 模板（dict）
+        data    —— process_subscribes() 返回的 nodes 字典
+                  { group_tag1: [nodes...], group_tag2: [nodes...], ... }
+
+    主要步骤：
+        1）config_outbounds = config["outbounds"]
+           - 这是模板中原本的出站配置（可能包含 selector、Proxy、URLTest 等）
+
+        2）先处理有 'subgroup' 的分组：
+           - 对每个 group（键名）：
+               · 如果 group 名中包含 'subgroup' 标记：
+                    - 在 tag='Proxy' 的 selector outbounds 中插入该子分组标签（或替换 {all}）
+                    - 额外创建一个新的 selector 出站：
+                        {
+                            "tag": 子分组简化名,
+                            "type": "selector",
+                            "outbounds": ["{原group名}"]
+                        }
+                    - 这样就能在面板中按 subgroup 维度单独选择节点组
+
+        3）处理 {all} 模板占位：
+           - 在每个包含 "outbounds" 字段的出站配置中：
+               · 如果出现 '{all}'：
+                    - 保留该占位，但后续会用所有 group 的节点填充
+               · 同时确保非占位项正常保留，避免被误删
+
+        4）用 pro_node_template 生成每个 selector 的出站列表：
+           def pro_node_template(data_nodes, config_outbound, group):
+                - 如果 config_outbound 里有 filter 字段：
+                    · 对 data_nodes 调用 nodes_filter() 做精细过滤
+                - 返回该 group 下所有 node['tag'] 的列表
+           - 对每个带有 "outbounds" 的模板出站 po：
+                · 遍历 po["outbounds"] 中的每个元素 oo：
+                    - 若 oo 形如 "{group_name}"：
+                        · 去掉花括号，查 data 中是否存在同名 group：
+                            - 存在：t_o.extend( pro_node_template(nodes, po, group) )
+                            - 不存在但名称为 'all'：
+                                · 对 data 中所有 group 均调用 pro_node_template
+                    - 若 oo 不是占位（普通出站 tag）：直接 append 到 t_o
+                · 若最终 t_o 为空（没有任何节点符合条件）：
+                    - 取出 config_outbounds 中 type='direct' 的项
+                    - 将其 tag 作为兜底出站加入 t_o，避免 sing-box 无法启动
+                    - 同时打印警告信息
+                · 将 po["outbounds"] 替换为 t_o，并删除 po['filter'] 字段（避免进入最终配置）
+
+        5）将所有节点实体附加到 config['outbounds'] 中：
+           - 把 data 中每个 group 的节点列表展开，追加到 temp_outbounds
+           - 最终：
+                config['outbounds'] = config_outbounds（处理后的 selector 等） + temp_outbounds（真正的节点出站）
+
+        6）自动为 DNS 规则配置对应 outbounds（防止 DNS 泄漏）：
+           - if providers["auto_set_outbounds_dns"] 存在并且配置了 proxy / direct：
+                · 调用 set_proxy_rule_dns(config)
+                · 会根据 route.rules 中的 outbound，自动为 dns.rules 添加 detour（proxy 或 direct）
+
+        7）WireGuard 特例处理：
+           - 找出所有 type='wireguard' 的 outbounds，放入 endpoints 列表
+           - 使用 OrderedDict 把 endpoints 字段插入到 config 中的 outbounds 后面
+           - 同时从 config['outbounds'] 中移除这些 wireguard 项
+           - 这样生成的配置符合 sing-box 对 endpoints/wireguard 的结构要求
+
+        8）返回最终 config 字典
+
+六、只输出节点模式：Only-nodes
+
+    在 main 逻辑的最后阶段：
+        - 如果 providers.get('Only-nodes') 为真：
+            · 将 nodes 字典中所有 group 的内容简单合并成一个列表 combined_contents
+            · final_config = combined_contents
+              （即只输出一个节点数组，适合给其它系统继续加工）
+        - 否则：
+            · final_config = combin_to_config(config, nodes)
+              （把节点合并进模板，成为完整 sing-box 配置）
+
+七、配置保存：save_config()
+
+    def save_config(path, nodes_or_config):
+        1）如果启用了 auto_backup：
+            - now = 当前时间戳 'YYYYmmddHHMMSS'
+            - 若目标 path 已存在：
+                · 将旧文件重命名为 path.YYYYmmddHHMMSS.bak
+        2）如果 path 已存在：
+            - 先删除，再保存新文件
+            - 打印“已删除文件，并重新保存：xxx”
+        3）否则：
+            - 打印“文件不存在，正在保存：xxx”
+        4）用 json.dump() 按 UTF-8 写入最终配置（带缩进）
+
+        注：updateLocalConfig() 函数中预留了向本地管理端口（如 9090）推送配置的 HTTP 接口，但在 main 中默认被注释掉，你可以根据需要开启。
+
+使用方式总结：
+1）准备 providers.json： - 定义全局：
+· save_config_path 输出 config.json 的保存路径
+· auto_backup 是否自动备份老配置
+· config_template 可选，远程模板 URL（否则读取本地 config_template/\*.json）
+· auto_set_outbounds_dns 自动为 DNS 规则设置 proxy/direct 出站
+· Only-nodes 是否只输出节点数组而不套模板
+· exclude_protocol 需要全局排除的协议列表（例如 "ssr,hysteria"） - 定义 subscribes 列表：
+· 每个订阅一个 dict：url / tag / prefix / emoji / ex-node-name / subgroup / enabled / filter 等
+
+    2）准备 parsers/ 目录：
+        - 确保对你需要支持的协议（vmess/vless/trojan/hy2/wireguard/…）都有相应的解析器模块，且模块名与协议字符串一致（或在 tool.get_protocol 中做了映射）
+
+    3）准备 config_template/ 模板：
+        - 模板中写好基本结构（dns / route / inbounds / 基础 outbounds）
+        - 使用占位符 {groupTag} 或 {all} 来告诉脚本“在这里填充各机场节点组”
+        - 可以给 selector 出站配置 filter，用于进一步包含/排除节点名称
+
+    4）运行本脚本：
+        - 本地直接：
+            python3 main.py
+        - 或通过其它程序/面板传入临时 JSON：
+            python3 main.py --temp_json_data '{"save_config_path": "...", "subscribes":[...], ...}' --template_index 0
+
+    5）脚本运行结束后：
+        - 在 save_config_path 指定的位置生成最终配置：
+            · 若 Only-nodes=True：为节点列表（outbound 配置块列表）
+            · 否则：为完整 sing-box config.json，可直接给 PuerNya 内核加载使用
+
+注意： - 该脚本不负责真正“启动 sing-box”或“修改防火墙规则”，它只负责“订阅收集 + 节点解析 + 筛选 + 合并模板 + 生成配置文件”这一层。 - 与 Sbshell / 路由器 TProxy/TUN/nftables 等协作时，你通常会：
+· 先用 main.py 自动生成 config.json
+· 再由外层脚本（例如 Sbshell 的 auto_update.sh / start_singbox.sh）负责重启 sing-box 与路由规则。
+"""
 
 ```
-https://xxxxxxx.vercel.app/config/url=https://xxxxxxsubscribe?token=123456/&file=https://github.com/Toperlock/sing-box-subscribe/raw/main/config_template/config_template_groups_tun.json
-```
-
-2023.10.26更新: 支持链接后面增加 `emoji`, `tag`, `prefix`, `UA`, `file`参数用 `&` 连接多个参数, 用法与 `providers.json` 里的参数一样
-
-`/config/URL_LINK/&emoji=1&prefix=♥&UA=v2rayng&file=https://xxxxxxxxx.json`
-
-上面例子表示：开启emoji，节点名前加♥，使用v2rayng用户代理，使用 `https://xxxxxxxxx.json` 作为生成 sing-box 配置模板
-
-示例：https://sing-box-subscribe.vercel.app/config/https://gist.githubusercontent.com/Toperlock/b1ca381c32820e8c79669cbbd85b68ac/raw/dafae92fbe48ff36dae6e5172caa1cfd7914cda4/gistfile1.txt/&file=https://github.com/Toperlock/sing-box-subscribe/raw/main/config_template/config_template_groups_tun.json
-
-### 演示视频
-
-|网页解析通用订阅链接(v2/clash/sing-box)|
-|-----------------------------|
-|<video controls width="250" src="https://github.com/Toperlock/sing-box-subscribe/assets/86833913/a583c443-0c7b-454e-aaf2-f0a7159b276a"></video>|
-
-## 导航
-
-[操作演示视频](https://github.com/Toperlock/sing-box-subscribe#-%E5%8A%9F%E8%83%BD%E6%BC%94%E7%A4%BA%E8%A7%86%E9%A2%91)
-
-[参数填写含义](https://github.com/Toperlock/sing-box-subscribe#providersjson%E6%96%87%E4%BB%B6)
-
-[模板内容详解](https://github.com/Toperlock/sing-box-subscribe#config%E6%A8%A1%E6%9D%BF%E6%96%87%E4%BB%B6)
-
-[Windows使用](https://github.com/Toperlock/sing-box-subscribe#windows-sing-box-%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95)
-
-## 支持协议
-
-|  协议 | V2格式 | Clash格式 | 标准URI格式 | SingBox格式 |
-|  :----  | :----: | :----: | :----: | :----: |
-| http  | ✅ | ✅ | ✅ | ✅ |
-| socks5  | ✅ | ✅ | ✅ | ✅ |
-| shadowsocks  | ✅ | ✅ | ✅ | ✅ |
-| shadowsocksR  | ✅ | ✅ | ✅ | singbox默认不支持此协议 |
-| vmess  | ✅ | ✅ | ✅ | ✅ |
-| trojan  | ✅ | ✅ | ✅ | ✅ |
-| vless  | ✅ | ✅ | ✅ | ✅ |
-| tuic  | ✅ | ✅ | ✅ | ✅ |
-| hysteria  | ✅ | ✅ | ✅ | ✅ |
-| hysteria2  | ✅ | ✅ | ✅ | ✅ |
-| wireguard  | ✅ | ✅ | ✅ | ✅ |
-
-~不支持转换 clash 订阅的解析~ 暂时只写了以上打勾协议的**分享链接**的解析（**v2订阅格式/clash订阅格式**），因为自己用的机场只有这几个协议。添加新的协议解析有能力可以自己写，比如 `vless.py`（文件名称必须为协议名称），写好后将其放入到 parsers 目录即可，`vless.py` 中必须包含 `parse` 函数。
-
-**脚本为自用，本人使用 [yacd](https://yacd.metacubex.one) (ios请用http://yacd.metacubex.one) 进行节点切换管理（类型为urltest、selector的出站），配合规则像clash一样分流，非常方便。需求跟我一样的可以尝试，使用脚本过程中有新的功能需求或者出现任何错误请提出 issue，不要骚扰 sing-box。**
-
-**脚本可以用vercel服务器部署在网页运行，也可以下载项目源码在本地运行。请使用自己部署的网站生成sing-box配置。**
-
-# 一、服务器部署
-
-## 开始使用
-
-1. 点击此项目右上角的 fork 按钮，fork 本项目到自己仓库；
-2. 点击右侧按钮开始部署：
-   [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)，直接使用 Github 账号登录即可；[请查看详细教程](./docs/vercel-cn.md#如何新建项目)。
-3. 部署完毕后，即可开始使用；
-4. （可选）[绑定自定义域名](https://vercel.com/docs/concepts/projects/domains/add-a-domain)：Vercel 分配的域名 DNS 在某些区域被污染了，绑定自定义域名即可直连。
-
-### 打开自动更新
-
-> 如果你遇到了 Upstream Sync 执行错误，请手动 Sync Fork 一次！
-
-当你 fork 项目之后，由于 Github 的限制，需要手动去你 fork 后的项目的 Actions 页面启用 Workflows，并启用 Upstream Sync Action，启用之后即可开启每小时定时自动更新：
-
-![自动更新](https://github.com/Toperlock/ChatGPT-Next-Web/raw/main/docs/images/enable-actions.jpg)
-
-![启用自动更新](https://github.com/Toperlock/ChatGPT-Next-Web/raw/main/docs/images/enable-actions-sync.jpg)
-
-### 手动更新代码
-
-如果你想让手动立即更新，可以查看 [Github 的文档](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/syncing-a-fork) 了解如何让 fork 的项目与上游代码同步。
-
-你可以 star/watch 本项目或者 follow 作者来及时获得新功能更新通知。
-
-## 页面操作步骤
-
-[示例网站](https://sing-box-subscribe.vercel.app/)。打开自己部署的网站，编辑右侧`编辑服务器 TEMP_JSON_DATA`方框内容，点击`保存`，左上角选择配置模板，点击`生成配置文件`。👉🏻[参数填写查看](https://github.com/Toperlock/sing-box-subscribe#providersjson%E6%96%87%E4%BB%B6)
-
-ios配合快捷指令复制网页内容，或者内容太多选择下载文稿后自行解决文稿后缀问题。👉🏻[快捷指令安装](https://www.icloud.com/shortcuts/75fd371e0aa8438a89f715238a21ee68)
-
-Android使用chrome浏览器打开网页生成配置文件（请在浏览器 设置-无障碍 缩小网页），长按内容，全选，分享到代码编辑器里，检查编辑器是否显示内容完整。👉🏻[编辑器安装](https://mt2.cn/download/)
-
-**注意点击保存后，尽快去生成配置文件，不然你填的内容会一直保留在网页上，别人打开网站也可以浏览到。目前想不到解决办法**
-
-<div align="left">
-  <img src="https://github.com/Toperlock/sing-box-subscribe/assets/86833913/95a79758-245b-4806-a483-b2993db7e62e" alt="how-to-use" width="50%" />
-</div>
-
-## 🎬 功能演示视频
-
-|网页解析通用订阅链接(v2/clash/sing-box)|网页批量解析URI|安卓谷歌浏览器页面缩小|
-|-----------------------------|-----------------------------|-----------------------------|
-|<video controls width="250" src="https://github.com/Toperlock/sing-box-subscribe/assets/86833913/9b3c006d-d554-435b-99c9-b28d4ccaad74"></video>|<video controls width="250" src="https://github.com/Toperlock/sing-box-subscribe/assets/86833913/88b0fa0e-b732-4018-8003-21f1a65586a9"></video>|<video controls width="250" src="https://github.com/Toperlock/sing-box-subscribe/assets/86833913/f534503c-ed3f-4d67-8302-d498cc3fc805"></video>
-
-|本地解析通用订阅链接(v2/clash/sing-box)|本地批量解析URI|
-|-----------------------------|-----------------------------|
-|<video controls width="250" src="https://github.com/Toperlock/sing-box-subscribe/assets/86833913/1249bb6a-54e4-44ef-9eb2-6057108bc337"></video>|<video controls width="250" src="https://github.com/Toperlock/sing-box-subscribe/assets/86833913/f88b392c-ea81-4460-b8af-00fe879affb0"></video>|
-
-# 二、本地安装
-### PC安装3.10及以上的[python](https://www.python.org/)版本，注意安装步骤里把python添加到系统环境变量（google安装步骤）
-
-<div align="left">
-  <img src="https://github.com/Toperlock/sing-box-subscribe/assets/86833913/f387322b-a602-40df-b3b6-95561329f2f8" alt="install" width="60%" />
-</div>
-
-### 在终端输入下面指令安装依赖（Mac把pip改为pip3）：
-
-```
-pip install requests paramiko scp chardet Flask PyYAML ruamel.yaml
-```
-
-<div align="left">
-  <img src="https://github.com/Toperlock/sing-box-subscribe/assets/86833913/0fc03b49-4c57-4ef3-a4fc-044c1a108d75" alt="install" width="60%" />
-</div>
-
-### 下载这个 `sing-box-subscribe` 项目，打开终端进入当前项目路径（可以直接在文件路径输入`cmd`）
-
-<div align="left">
-  <img src="https://github.com/Toperlock/sing-box-subscribe/assets/86833913/73f05ba8-105c-4f10-8e6c-16e27f26c084" alt="run" width="60%" />
-</div>
-
-### 把订阅链接放到 `providers.json` ，编辑好 `config_template_groups_tun.json` 模板使用下面的命令运行脚本：
-
-```
-python main.py
-```
-
-### 使用过程中提示python没有模块就安装对应的模块，例如下面提示就输入指令（Mac把pip改为pip3）：
-
-```
-pip install chardet
-```
-<div align="left">
-  <img src="https://github.com/Toperlock/sing-box-subscribe/assets/86833913/1762db84-23f5-4cbd-a9d1-df3ca253396c" alt="install" width="60%" />
-</div>
-
-windows系统建议将命令添加到批处理程序运行。
-
-使用前先编辑 `providers.json` 文件以及 config_template 目录下的 `.json` 模板文件。
-
-已内置懒人 `config_template_groups_tun` 文件，请在模板里修改筛选节点
-* 实现 `Openai` 分流
-* 实现 `Google` 分流
-* 实现 `Telegram` 分流
-* 实现 `Twitter` 分流
-* 实现 `Facebook` 分流
-* 实现 `Amazon` 分流
-* 实现 `Apple` 分流
-* 实现 `Microsoft` 分流
-* 实现 `Game` 分流
-* 实现 `Bilibili` 分流
-* 实现 `Youtube` 分流
-* 实现 `Netflix` 分流
-* 实现 `Hbo` 分流
-* 实现 `Disney` 分流
-* 实现 `Prime Video` 分流
-
-# providers.json文件
-在这个文件中添加订阅链接，以及基础设置。
-```json
-{
-    "subscribes":[
-        {
-            "url": "订阅地址",
-            "tag": "机场1", //保持默认，除非你知道这是干什么的
-            "enabled": true,
-            "emoji": 1, //节点名前添加国家emoji
-            "prefix": "", //节点名前加自定义前缀
-            "User-Agent":"clashmeta" //自定义获取订阅链接的UA，比如:"v2rayNG","Shadowrocket/1900 CFNetwork/1331.0.7 Darwin/21.4.0"
-        },
-        {
-            "url": "订阅地址",
-            "tag": "机场2",
-            "enabled": false, //不启用
-            "emoji": 0,
-            "prefix": "❤️机场前缀 - ",
-            "User-Agent":"clashmeta"
-        }
-    ],
-    "auto_set_outbounds_dns":{
-        "proxy": "",
-        "direct": ""
-    },
-    "save_config_path": "./config.json",
-    "auto_backup": false,
-    "exlude_protocol": "ssr" //排除订阅链接里ssr协议节点
-    "config_template": "", //自定义正确的网页json配置模板链接
-    "Only-nodes": false //开启时，只输出节点内容(不是完整sing-box配置)
-}
-```
-- `url`：必须。
-
-> 支持机场普通的v2订阅链接（**内容为base64编码**）
-
-> 支持机场clash订阅链接
-
-> 支持机场sing-box订阅链接
-
-> 本地文件路径（**内容为标准URI链接或者clash字段**）
-       
-      本地文件以 `.txt` 后缀，需要在文件中每行一个添加单节点分享链接，比如 `ss://` 开头（非订阅链接）。
-
-      本地文件以 `.yaml` 后缀，填写正确的 clash proxies 字段。
-      
-      本地文件需要保存到相同盘符，本地路径格式： `/Desktop/sing-box-subscribe/xx.txt` 或者是与 `main.py` 相同文件夹里相对路径格式： `./xx.txt`。
-
-- `tag`：必须。
-
-> config 模板里填上此处写的tag才能添加此订阅。此处的 `"机场1"` 对应 config 模板中的 `"{机场1}"` 具体使用方法可以查看下方的 config 模板部分。
-
-<details>
-      <summary>tag截图参考</summary>
-      
-<div align="left">
-<img src="https://github.com/Toperlock/sing-box-subscribe/assets/86833913/b8673073-7160-429f-9ced-3eae7925036e" alt="download" width="65%" />
-</div>
-
-</details>
-      
-- `enabled`：非必需。**将其设置为 false 时，此订阅会被忽略**。
-
-- `emoji`：非必需。**将其设置为 false 或 0 时，节点名称不会添加国旗emoji**。
-
-- `prefix`：非必需。设置自定义前缀，前缀会添加到对应节点名称前。如果没有设置，则不添加前缀。
-
-- `User-Agent`：非必需。可以自定义UA，比如设置UA为"clash.meta"，或者"sing-box"
-
-<details>
-      <summary>prefix效果参考</summary>
-      
-![Snipaste_2023-05-02_12-53-27](https://user-images.githubusercontent.com/21310130/235582317-6bb3d0a6-916f-445f-999b-f17b3db41eea.png)
-
-</details>
-
-- `auto_set_outbounds_dns`：非必需。
-> 包含 `proxy` 和 `direct` 设置项。
-
-> `proxy` 和 `direct` 应该设置为 config 模板文件中存在的 `dns server` 的 `tag`。
-
-> 设置此项后，脚本会自动适配 路由规则 到 dns 规则。
-
-> 将路由规则中 `direct` 出站 的 `dns server` 设置为选项中指定的 `direct` 出站。
-
-> 将路由规则中需要代理的 出站 设置为对应的 `proxy` 出站，脚本会自动创建对应出站的 `dns server`，以 `proxy` 设置项指定的 `dns server` 为模板。
- 
-- `save_config_path`：必需。设置生成的配置文件路径。
- 
-- `auto_backup`：非必需。
-> 设置为 true 时，脚本会将当前使用的sing-box配置文件更名为 `原文件名称.当前时间.bak` 进行备份，避免生成错误的配置文件后无法挽回。
- 
-- `exlude_protocol`：非必需。
-> 设置不解析的协议，多个使用英文逗号分隔，比如ssr,vmess。
-
-> 使用此设置中的协议的分享链接会被忽略。
-
-> sing-box release中的程序没有支持ssr（需要自己添加参数构建），所以此设置可能有用。
-
-- `config_template`：非必需。输入一个正确的网页json配置模板链接，以此模板生成sing-box配置。
-
-- `Only-nodes`：非必需。
-> 将其设置为 true 或 1 时，只输出订阅链接 sing-box 格式的节点信息
-
-# config模板文件
-脚本会在 config_template 目录下查找 json 模板文件，脚本运行时可以选择使用的模板文件。
-
-比如目录下存在 `tun.json` 和 `socks.json` 两个模板文件。
-
-![Snipaste_2023-03-24_22-16-49](https://user-images.githubusercontent.com/21310130/227548643-ffbf3825-9304-4df7-9b65-82a935227aef.png)
-
-脚本不会检查模板文件的正确性，模板文件不正确会出现错误并无法运行脚本。目录下自带有模板，根据需要修改。
-
-模板文件基本等同于 sing-box config，不过有一些新的参数，比如 `{all}`、`{机场tag}`、`filter`，所有参数仅在 `clash_mode` 的出站方式下才会生效，出站类型为 `urltest`、`selector`。
-```json
-{
-  "tag":"proxy",
-  "type":"selector",
-  "outbounds":[
-    "auto",
-    "{all}"//所有订阅所有节点添加到此标记所在位置
-  ],
-  "filter":[
-    //此条过滤将会删除 机场1 中包含 ˣ² 的节点
-    {"action":"exlude","keywords":["ˣ²"],"for":["机场1"]}
-  ]
-},
-{
-  "tag":"netflix",
-  "type":"selector",
-  "outbounds":[
-    "{机场1}",//订阅tag为 机场1 的节点将添加到此标记所在位置
-    "{机场2}"//订阅tag为 机场2 的节点将添加到此标记所在位置
-  ],
-  "filter":[
-    //如果机场1，机场2有节点 sg、新加坡、tw、台湾，他们共同组成 netflix 组
-    {"action":"include","keywords":["sg|新加坡|tw|台湾"]},
-    //for里面设置为机场1，代表此条规则只对机场1起作用
-    {"action":"exlude","keywords":["ˣ²"],"for":["机场1"]}
-    //执行完第二个规则后 netflix 组将机场1 中包含 ˣ² 的节点删掉
-  ]
-}
-```
-- `{all}`：表示所有订阅中的所有节点。脚本会将所有节点添加到有此标识的 `outbounds` 中。
-
-- `{机场tag}`：在 `providers.json` 中设置的机场 `tag` 可以用于此处，代表此订阅中的所有节点。
-
-- `filter`：非必需。节点过滤，为一个数组对象，可以添加任意条规则，格式为:
-```json
-"filter":[
-    {"action":"include","keywords":["保留关键字1|保留关键字2"]},
-    {"action":"exlude","keywords":["排除关键字1|排除关键字2"],"for":["机场1tag","机场2tag"]}
-  ]
-```
-- **关键字大小写敏感**
-
-- `include`：后面添加要保留的关键字，用 '|' 连接多个关键字，名称中包含这些关键字的节点都将被保留，其他节点会被删除。
-
-- `exlude`：后面添加要排除的关键字，用 '|' 连接多个关键字，名称中包含这些关键字的节点都将被删除，其他节点会被保留。
-
-- `for`：非必需。设置机场 `tag`，可以多个，表示此规则只对指定的机场起作用，其他机场会忽略这个规则。
-
-多个规则会按顺序执行过滤。
-
-# Windows sing-box 使用方法
-
-1. 下载Windows客户端程序[sing-box-windows-amd64.zip](https://github.com/SagerNet/sing-box/releases)。
-2. 新建一个 `.bat` 批处理文件，内容为 `start /min sing-box.exe run`。
-3. 参考[客户端配置](https://github.com/chika0801/sing-box-examples/blob/main/Tun/config_client_windows.json)示例，按需修改后将文件名改为 **config.json**，与 **sing-box.exe**，批处理文件放在同一文件夹里。
-4. 右键点击 **sing-box.exe** 选择属性，选择兼容性，选择以管理员身份运行此程序，确定。
-5. 运行批处理文件，在弹出的用户账户控制对话框中，选择是。
-
-## 隐藏Windows运行sing-box弹出的cmd窗口
-
-> 使用WinSW把sing-box.exe设置成Windows服务，[WinSW教程](https://www.jianshu.com/p/fc9e4ea61e13)
-
-> XML配置文件修改
-```xml
-<service>
-  <id>sing-box</id>
-  <name>sing-box</name>
-  <description>sing-box Service</description>
-  <executable>./sing-box.exe</executable>
-  <log mode="reset"></log>
-  <arguments>run</arguments>
-</service>
-```
-<details>
-      <summary>Windows sing-box 文件夹内容</summary>
- 
-<div align="left">
-  <img src="https://github.com/Toperlock/sing-box-subscribe/assets/86833913/c6a815bf-b542-43c6-aeb6-84020586a1f1" alt="download" width="50%" />
-</div>
-
-</details>
-
-<details>
-      <summary><b>效果参考</b></summary>
-
-具体效果根据个人的出站及规则设置决定。
-
-<div align="left">
-  <img src="https://user-images.githubusercontent.com/21310130/227577941-01c80cfc-1cd9-4f95-a709-f5442a2a2058.png" alt="download" width="50%" />
-  <img src="https://user-images.githubusercontent.com/21310130/227577968-6747c7aa-db61-4f6c-b7cc-e3802e34cc3d.png" alt="download" width="50%" />
-  <img src="https://github.com/Toperlock/sing-box-subscribe/assets/86833913/955968d7-98e7-4bd2-a582-02576877dba1" alt="download" width="50%" />
-  <img src="https://github.com/Toperlock/sing-box-subscribe/assets/86833913/9e7c35ff-c6c4-46c4-a74b-624ff72c17ea" alt="download" width="50%" />
-</div>
-
-</details>
-
-# 感谢
-- [一佬](https://github.com/xream)
-- [sing-box](https://github.com/SagerNet/sing-box)
-- [yacd](https://github.com/haishanh/yacd)
-- [clash](https://github.com/Dreamacro/clash)
-- [sing-box-examples@chika0801](https://github.com/chika0801/sing-box-examples)
-
-部分协议解析参考了[convert2clash](https://github.com/waited33/convert2clash)
-
-部分clash2v2ray参考了[clash2base64](https://github.com/yuanyiwei/toys/blob/master/DEPRECATED/clash/clash2base64.py)
-
-同步代码参考了[ChatGPT-Next-Web](https://github.com/Yidadaa/ChatGPT-Next-Web)
-
-感谢@SayRad的越南翻译

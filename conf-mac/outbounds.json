@@ -1,0 +1,141 @@
+{
+  "outbounds": [
+    {
+      "tag": "🔐 PROXY",
+      "type": "selector",
+      "outbounds": [
+        "🔐🇸🇬 PROXYSG",
+        "🔐🇹🇼 PROXYTW",
+        "🔐🇭🇰 PROXYHK",
+        "👑 高级节点",
+        "📉 省流节点",
+        "🧐 HY2",
+        "🆓 手动节点"
+      ]
+    },
+    {
+      "tag": "🆓 手动节点",
+      "type": "selector",
+      "outbounds": ["CustomNode", "{all}"]
+    },
+    {
+      "tag": "🧐 HY2",
+      "type": "selector",
+      "outbounds": ["🧐🇹🇼 HY2TW", "🧐🇸🇬 HY2SG", "🧐🇭🇰 HY2HK"]
+    },
+    {
+      "tag": "🔐🇸🇬 PROXYSG",
+      "type": "urltest",
+      "url": "http://1.1.1.1/cdn-cgi/trace",
+      "interval": "10m",
+      "idle_timeout": "10m",
+      "tolerance": 120,
+      "outbounds": ["{all}"],
+      "filter": [
+        { "action": "include", "keywords": ["(?i)(🇸🇬|新|sg|singapore)"] },
+        { "action": "include", "type": ["trojan", "vless"] }
+      ]
+    },
+    {
+      "tag": "🔐🇹🇼 PROXYTW",
+      "type": "urltest",
+      "url": "http://1.1.1.1/cdn-cgi/trace",
+      "interval": "10m",
+      "idle_timeout": "10m",
+      "tolerance": 120,
+      "outbounds": ["{all}"],
+      "filter": [
+        { "action": "include", "keywords": ["🇹🇼|TW|tw|台湾|臺灣|台|Taiwan"] },
+        { "action": "include", "type": ["trojan", "vless"] }
+      ]
+    },
+    {
+      "tag": "🔐🇭🇰 PROXYHK",
+      "type": "urltest",
+      "url": "http://1.1.1.1/cdn-cgi/trace",
+      "interval": "10m",
+      "idle_timeout": "10m",
+      "tolerance": 120,
+      "outbounds": ["{all}"],
+      "filter": [
+        {
+          "action": "include",
+          "keywords": ["(?i)(🇭🇰|港|hk|hongkong|hong kong)"]
+        },
+        { "action": "include", "type": ["trojan", "vless"] }
+      ]
+    },
+    {
+      "tag": "🧐🇹🇼 HY2TW",
+      "type": "selector",
+      "outbounds": ["{all}", "🆓 手动节点"],
+      "filter": [
+        { "action": "include", "keywords": ["🇹🇼|TW|tw|台湾|臺灣|台|Taiwan"] },
+        { "action": "include", "type": ["hysteria2"] }
+      ]
+    },
+    {
+      "tag": "🧐🇸🇬 HY2SG",
+      "type": "selector",
+      "outbounds": ["{all}", "🆓 手动节点"],
+      "filter": [
+        { "action": "include", "keywords": ["(?i)(🇸🇬|新|sg|singapore)"] },
+        { "action": "include", "type": ["hysteria2"] }
+      ]
+    },
+    {
+      "tag": "🧐🇭🇰 HY2HK",
+      "type": "selector",
+      "outbounds": ["{all}", "🆓 手动节点"],
+      "filter": [
+        {
+          "action": "include",
+          "keywords": ["(?i)(🇭🇰|港|hk|hongkong|hong kong)"]
+        },
+        { "action": "include", "type": ["hysteria2"] }
+      ]
+    },
+    {
+      "tag": "👑 高级节点",
+      "type": "selector",
+      "outbounds": ["{all}", "🆓 手动节点"],
+      "filter": [
+        {
+          "action": "include",
+          "keywords": [
+            "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "📉 省流节点",
+      "type": "selector",
+      "outbounds": ["{all}", "🆓 手动节点"],
+      "filter": [
+        {
+          "action": "include",
+          "keywords": ["0\\.[1-5]|低倍率|省流|大流量"]
+        }
+      ]
+    },
+    { "tag": "🎯 全球直连", "type": "selector", "outbounds": ["DIRECT"] },
+    { "tag": "🔴 全球拦截", "type": "selector", "outbounds": ["REJECT"] },
+    { "tag": "DIRECT", "type": "direct" },
+    { "tag": "REJECT", "type": "block" },
+    {
+      "tag": "CustomNode",
+      "type": "hysteria2",
+      "server": "1sg001.476579.xyz",
+      "server_port": 8080,
+      "password": "311f32f9-ab81-4ef0-80f8-7e7730ec4b54",
+      "up_mbps": 50,
+      "down_mbps": 100,
+      "tls": {
+        "enabled": true,
+        "server_name": "1sg001.476579.xyz",
+        "insecure": false
+      }
+    }
+  ]
+}
