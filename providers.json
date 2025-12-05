@@ -1,29 +1,43 @@
 {
-    "subscribes":[
-        {
-            "url": "URL LINK",
-            "tag": "tag_1",
-            "enabled": true,
-            "emoji": 1,
-            "prefix": "",
-            "User-Agent":"clashmeta"
-        },
-        {
-            "url": "URL LINK",
-            "tag": "tag_2",
-            "enabled": false,
-            "emoji": 0,
-            "prefix": "❤️",
-            "User-Agent":"clashmeta"
-        }
-    ],
-    "auto_set_outbounds_dns":{
-        "proxy": "",
-        "direct": ""
+  "subscribes": [
+    {
+      "tag": "Fn",
+      "url": "https://x1.344211.cc/api/v1/client/subscribe?token=5f940a0b84ae148eb9ef829d13f211a4",
+      "enabled": true,
+      "emoji": 0,
+      "subgroup": "",
+      "prefix": "🐦 FN-",
+      "User-Agent": "clashmeta",
+      "ex-node-name": "故障,网址,重置,到期,自动,剩余,手动,文档,官网,群,防"
     },
-    "save_config_path": "./config.json",
-    "auto_backup": false,
-    "exlude_protocol":"ssr",
-    "config_template": "",
-    "Only-nodes": false
+    {
+      "tag": "LMY",
+      "url": "https://linka.lmscunb.cc:2087/api/v1/client/subscribe?token=c468eafddee4df660541aefe467cf635",
+      "enabled": true,
+      "emoji": 0,
+      "subgroup": "",
+      "prefix": "🐱 LM-",
+      "User-Agent": "clashmeta",
+      "ex-node-name": "故障,网址,重置,到期,自动,剩余,手动,文档,官网,群,防"
+    },
+    {
+      "tag": "Fast",
+      "url": "https://10ncydlf.flsubcn.cc:2096/zvlqjih1t/obsvw3zgxzapifk6?clash=1&extend=1",
+      "enabled": true,
+      "emoji": 0,
+      "subgroup": "",
+      "prefix": "💨 Fast-",
+      "User-Agent": "clashmeta",
+      "ex-node-name": "故障,网址,重置,到期,自动,剩余,手动,文档,官网,群,防"
+    }
+  ],
+  "auto_set_outbounds_dns": {
+    "proxy": "",
+    "direct": ""
+  },
+  "save_config_path": "./config.json",
+  "auto_backup": false,
+  "exclude_protocol": "ssr",
+  "config_template": "",
+  "Only-nodes": false
 }
