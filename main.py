@@ -631,49 +631,70 @@ def parse_json(value):
     except json.JSONDecodeError:
         raise argparse.ArgumentTypeError(f"Invalid JSON: {value}")
 
-def generate_config_from_providers(providers: dict):
+def generate_config_from_providers(providers_data: dict):
     """
-    providers: 原来 providers.json 里的那坨东西（含 subscribes / config_template / Only-nodes 等）
-    return: 最终 sing-box 配置，给 Vercel 作为 JSON 返回
+    给 Vercel / API 用的封装函数：
+    - 输入: providers_data (从 SUB_CONFIG 或 URL 传进来的 dict)
+    - 输出: 生成好的 sing-box/clash 配置 (dict 或 list)
     """
+    if not isinstance(providers_data, dict):
+        raise ValueError("providers_data 必须是 dict")
 
-    # 1. 初始化解析器（你原来的函数）
-    init_parsers()  # ← 用你自己的
+    # 这里沿用你原来的全局变量用法
+    global providers
+    providers = providers_data
 
-    # 2. 处理模板：远程模板 / 本地模板
-    if providers.get('config_template'):  # 有 config_template 的情况（URL 或本地路径）
-        tpl = providers['config_template']
-        if tpl.startswith('http://') or tpl.startswith('https://'):
+    # 初始化解析器（和原脚本一样）
+    init_parsers()
+
+    # 1) 处理模板 config_template（如果需要用模板）
+    config = None
+    config_template_path = (providers.get("config_template") or "").strip()
+
+    if config_template_path:
+        # 有配置模板：可以是本地路径，也可以是远程 URL
+        if config_template_path.startswith("http://") or config_template_path.startswith("https://"):
             # 远程模板
-            resp = requests.get(tpl, timeout=10)
+            resp = requests.get(config_template_path, timeout=10)
             resp.raise_for_status()
-            config = resp.json()
+            # 尝试按 JSON 解析，不行再按 YAML
+            try:
+                config = resp.json()
+            except Exception:
+                try:
+                    config = yaml.safe_load(resp.text)
+                except Exception as e:
+                    raise ValueError(f"读取远程模板失败: {e}")
         else:
-            # 本地模板
-            config = load_json(tpl)  # ← 用你原来的 load_json
+            # 本地文件模板
+            config = load_json(config_template_path)
+
+    # 2) 处理订阅，生成节点
+    if "subscribes" not in providers or not providers["subscribes"]:
+        raise ValueError("providers 中缺少 subscribes 字段，或为空")
+
+    nodes = process_subscribes(providers["subscribes"])
+
+    # 3) 只返回节点，还是套用模板
+    if providers.get("Only-nodes"):
+        # 只要节点列表
+        combined_contents = []
+        for sub_tag, contents in nodes.items():
+            for content in contents:
+                combined_contents.append(content)
+        final_config = combined_contents
     else:
-        # 没有显式指定模板，就从你原来的 get_template 里随便选一个
-        template_list = get_template()  # ← 你原来的函数
-        if not template_list:
-            raise RuntimeError("no template found in config_template/")
-        # Vercel 环境不能 input，所以这里默认用第一个
-        tpl_path = f"config_template/{template_list[0]}.json"
-        config = load_json(tpl_path)
+        # 需要完整配置，但没有模板 → 给一个明确报错，而不是让 None 去下标
+        if config is None:
+            raise ValueError(
+                "config_template 为空且 Only-nodes 为 false："
+                "在无交互环境（如 Vercel）下无法选择模板。"
+                "请在 SUB_CONFIG 中提供 config_template，或把 Only-nodes 设为 true。"
+            )
+        # 用你原来的组合逻辑
+        final_config = combin_to_config(config, nodes)
 
-    # 3. 拉订阅，解析成节点
-    #    这个就是你原来 main.py 里面：
-    #    nodes = process_subscribes(providers["subscribes"])
-    nodes = process_subscribes(providers["subscribes"])  # ← 用你自己的
-
-    # 4. 只要节点，还是要完整 config
-    if providers.get('Only-nodes'):
-        combined = []
-        for _, contents in nodes.items():
-            combined.extend(contents)
-        final_config = combined
-    else:
-        final_config = combin_to_config(config, nodes)  # ← 你原来的组合函数
-
+    # 不在这里写文件，直接返回给 API
     return final_config
 
 if __name__ == '__main__':
