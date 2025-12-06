@@ -1,7 +1,7 @@
 {
   "log": {
     "disabled": false,
-    "level": "info",
+    "level": "warn",
     "timestamp": true,
     "output": "/Users/CHQ/Desktop/Router/SFM/logs.log"
   },
@@ -81,7 +81,7 @@
     "reverse_mapping": true
   },
   "ntp": {
-    "enabled": true,
+    "enabled": false,
     "server": "ntp1.aliyun.com",
     "detour": "🎯 全球直连"
   },

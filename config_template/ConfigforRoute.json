@@ -1,7 +1,7 @@
 {
   "log": {
     "disabled": false,
-    "level": "info",
+    "level": "warn",
     "timestamp": true,
     "output": "/overlay/ShellCrash/SB112/sb.log"
   },
@@ -81,9 +81,9 @@
     "reverse_mapping": true
   },
   "ntp": {
-    "enabled": true,
+    "enabled": false,
     "server": "ntp1.aliyun.com",
-    "detour": "🔐 PROXY"
+    "detour": "🎯 全球直连"
   },
   "experimental": {
     "cache_file": {
@@ -95,8 +95,6 @@
       "external_controller": "0.0.0.0:9999",
       "external_ui": "ui",
       "secret": "",
-      "external_ui_download_url": "https://gh-proxy.com/https://github.com/MetaCubeX/metacubexd/archive/refs/heads/gh-pages.zip",
-      "external_ui_download_detour": "🎯 全球直连",
       "default_mode": "rule"
     }
   },

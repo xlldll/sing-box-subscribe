@@ -1,5 +1,5 @@
 {
-  "enabled": true,
+  "enabled": false,
   "server": "ntp1.aliyun.com",
-  "detour": "🔐 PROXY"
+  "detour": "🎯 全球直连"
 }
