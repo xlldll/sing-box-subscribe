@@ -129,96 +129,129 @@ def process_subscribes(subscribes):
     return nodes
 
 
+def action_keywords(nodes, action, keywords):
+    """
+    按节点名称 (tag) 中的关键字进行过滤。
+
+    参数：
+        nodes: list[dict]
+            节点列表。
+        action: str
+            "include" → 只保留匹配关键字的节点
+            "exclude" → 移除匹配关键字的节点
+        keywords: list[str]
+            关键字列表，会以 | 拼成正则表达式。
+
+    说明：
+        对 tag 执行正则匹配，比如：
+        keywords = ["HK", "🇭🇰"]
+        会变成正则：  "HK|🇭🇰"
+    """
+    temp_nodes = []
+    exclude_mode = (action == "exclude")
+
+    # 如果没有关键字，不执行过滤
+    combined_pattern = "|".join(keywords or [])
+    if not combined_pattern or combined_pattern.isspace():
+        return nodes
+
+    regex = re.compile(combined_pattern)
+
+    for node in nodes:
+        tag = node.get("tag", "")
+        matched = bool(regex.search(tag))
+
+        # include →  matched == True  时保留
+        # exclude →  matched == False 时保留
+        # 使用 XOR（异或）来统一逻辑：
+        # matched ^ exclude_mode
+        #   include: matched ^ False → matched
+        #   exclude: matched ^ True  → not matched
+        if matched ^ exclude_mode:
+            temp_nodes.append(node)
+
+    return temp_nodes
+
+
+
 def nodes_filter(nodes, filters, group):
     """
-    根据 filters 规则列表过滤节点。
+    对节点列表依次应用过滤规则 filters。
 
-    支持两种规则写法（可以混用，按顺序依次执行）：
+    支持 3 类规则（按优先级顺序执行）：
 
-    1）按节点名称关键字过滤：
-       {
-         "action": "include" / "exclude",
-         "keywords": ["🇺🇸|US|美国", "HK"]
-       }
+    ① 按 server 正则过滤（最高优先级）
+        只保留 server 是 IPv4 的节点
+        {
+        "action": "include",
+        "server_regex": "^(?:\\d{1,3}\\.){3}\\d{1,3}$"
+        }
+        排除所有域名节点
+        {
+        "action": "exclude",
+        "server_regex": "^(?!\\d{1,3}(?:\\.\\d{1,3}){3}$).+"
+        }
 
-    2）按节点协议类型过滤（如 hysteria2 / trojan / vmess 等）：
+    ② 按节点协议类型过滤
        {
          "action": "include" / "exclude",
          "type": ["hysteria2", "trojan"]
        }
 
-    可选字段：
-       "for": ["America", "Asia"]
-       - 仅当当前 group 在列表中时，该条过滤规则才生效。
+    ③ 按 tag 关键字过滤
+       {
+         "action": "include" / "exclude",
+         "keywords": ["HK", "日本", "🇯🇵"]
+       }
 
-    参数：
-        nodes: list[dict]
-            当前要过滤的节点列表。
-        filters: list[dict]
-            过滤规则列表。
-        group: str
-            当前节点所属分组名称（用来匹配规则中的 "for"）。
+    额外字段：
+       "for": ["Asia", "America"]
+       → 当 group 在 for 列表中时，该过滤规则才会生效。
 
     返回：
-        list[dict]: 过滤后的节点列表。
+       list[dict] → 过滤后的节点列表
     """
+
     for f in filters:
-        # 如果规则限制了适用分组，且当前 group 不在其中，则跳过此规则
-        if f.get('for') and group not in f['for']:
+
+        # 如果规则指定了适用分组，但当前不匹配，则跳过
+        if f.get("for") and group not in f["for"]:
             continue
 
-        # 优先按协议类型过滤
-        if 'type' in f:
-            nodes = action_types(nodes, f['action'], f['type'])
-        else:
-            # 否则按关键字过滤
-            nodes = action_keywords(nodes, f['action'], f.get('keywords', []))
+        # -------------------------------------------------------------------
+        # ① server 正则过滤（你新加的能力：匹配 server 字段）
+        # -------------------------------------------------------------------
+        if "server_regex" in f:
+            regex = re.compile(f["server_regex"])
+            exclude_mode = (f["action"] == "exclude")
+
+            filtered = []
+            for node in nodes:
+                server = node.get("server", "")
+                matched = bool(regex.search(server))
+
+                # include: matched → 保留
+                # exclude: not matched → 保留
+                if matched ^ exclude_mode:
+                    filtered.append(node)
+
+            nodes = filtered
+            continue
+
+        # -------------------------------------------------------------------
+        # ② 协议类型过滤
+        # -------------------------------------------------------------------
+        if "type" in f:
+            # action_types 是你已有的函数，不改动
+            nodes = action_types(nodes, f["action"], f["type"])
+            continue
+
+        # -------------------------------------------------------------------
+        # ③ 按 tag 名称关键字过滤
+        # -------------------------------------------------------------------
+        nodes = action_keywords(nodes, f["action"], f.get("keywords", []))
 
     return nodes
-
-
-def action_keywords(nodes, action, keywords):
-    """
-    按节点名称关键字进行过滤。
-
-    参数：
-        nodes: list[dict]
-            要过滤的节点列表。
-        action: str
-            "include"：只保留匹配关键字的节点
-            "exclude"：移除匹配关键字的节点
-        keywords: list[str]
-            关键字列表，内部会用 | 拼成一个正则表达式。
-
-    返回：
-        list[dict]: 过滤后的节点列表。
-    """
-    temp_nodes = []
-    flag = False
-    if action == 'exclude':
-        flag = True
-
-    # 将多个关键字用 | 连接成一个正则表达式
-    combined_pattern = '|'.join(keywords or [])
-
-    # 如果关键字为空或仅为空白字符，不执行任何过滤
-    if not combined_pattern or combined_pattern.isspace():
-        return nodes
-
-    compiled_pattern = re.compile(combined_pattern)
-
-    for node in nodes:
-        name = node.get('tag', '')
-        match_flag = bool(compiled_pattern.search(name))
-
-        # 使用 XOR 逻辑决定是否保留：
-        # include: match_flag ^ False → 匹配则保留
-        # exclude: match_flag ^ True  → 匹配则丢弃
-        if match_flag ^ flag:
-            temp_nodes.append(node)
-
-    return temp_nodes
-
 
 def action_types(nodes, action, types):
     """

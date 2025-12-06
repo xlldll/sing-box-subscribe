@@ -70,6 +70,10 @@
       "type": "selector",
       "outbounds": ["{all}", "🆓 手动节点"],
       "filter": [
+        {
+          "action": "include",
+          "server_regex": "^(?:\\d{1,3}\\.){3}\\d{1,3}$"
+        },
         { "action": "include", "keywords": ["🇹🇼|TW|tw|台湾|臺灣|台|Taiwan"] },
         { "action": "include", "type": ["hysteria2"] }
       ]
@@ -79,6 +83,10 @@
       "type": "selector",
       "outbounds": ["{all}", "🆓 手动节点"],
       "filter": [
+        {
+          "action": "include",
+          "server_regex": "^(?:\\d{1,3}\\.){3}\\d{1,3}$"
+        },
         { "action": "include", "keywords": ["(?i)(🇸🇬|新|sg|singapore)"] },
         { "action": "include", "type": ["hysteria2"] }
       ]
@@ -88,6 +96,10 @@
       "type": "selector",
       "outbounds": ["{all}", "🆓 手动节点"],
       "filter": [
+        {
+          "action": "include",
+          "server_regex": "^(?:\\d{1,3}\\.){3}\\d{1,3}$"
+        },
         {
           "action": "include",
           "keywords": ["(?i)(🇭🇰|港|hk|hongkong|hong kong)"]
