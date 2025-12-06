@@ -38,6 +38,6 @@
   "save_config_path": "./config.json",
   "auto_backup": false,
   "exclude_protocol": "ssr",
-  "config_template": "config_template/ConfigforMac.json",
+  "config_template": "",
   "Only-nodes": false
 }

@@ -11,5 +11,5 @@ venv/
 ENV/ 
 env.bak/ 
 venv.bak/ 
-providers.json
 config.json
+providers copy.json
