@@ -1,40 +1,17 @@
 {
   "subscribes": [
     {
-      "tag": "Fn",
-      "url": "",
+      "tag": "Ykkk",
+      "url": "https://config.moe/config/1d6286d8dfeb6b9b4f74a9c1c29b722d",
       "enabled": true,
       "emoji": 0,
       "subgroup": "",
-      "prefix": "🐦 FN-",
-      "User-Agent": "clashmeta",
-      "ex-node-name": "故障,网址,重置,到期,自动,剩余,手动,文档,官网,群,防,时间"
-    },
-    {
-      "tag": "LMY",
-      "url": "",
-      "enabled": true,
-      "emoji": 0,
-      "subgroup": "",
-      "prefix": "🐱 LM-",
-      "User-Agent": "clashmeta",
-      "ex-node-name": "故障,网址,重置,到期,自动,剩余,手动,文档,官网,群,防,时间"
-    },
-    {
-      "tag": "Fast",
-      "url": "",
-      "enabled": true,
-      "emoji": 0,
-      "subgroup": "",
-      "prefix": "💨 Fast-",
+      "prefix": "🐆 Ykkk-",
       "User-Agent": "clashmeta",
       "ex-node-name": "故障,网址,重置,到期,自动,剩余,手动,文档,官网,群,防,时间"
     }
   ],
-  "auto_set_outbounds_dns": {
-    "proxy": "",
-    "direct": ""
-  },
+  "auto_set_outbounds_dns": { "proxy": "", "direct": "" },
   "save_config_path": "./config.json",
   "auto_backup": false,
   "exclude_protocol": "ssr",
