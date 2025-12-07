@@ -10,25 +10,30 @@
         "👑 高级节点",
         "📉 省流节点",
         "🧐 HY2",
-        "🆓 手动节点"
+        "🆓 手动节点",
+        "🎯 全球直连"
       ]
-    },
-    {
-      "tag": "🆓 手动节点",
-      "type": "selector",
-      "outbounds": ["CustomNode", "{all}"]
     },
     {
       "tag": "🧐 HY2",
       "type": "selector",
-      "outbounds": ["🧐🇹🇼 HY2TW", "🧐🇸🇬 HY2SG", "🧐🇭🇰 HY2HK"]
+      "outbounds": [
+        "🧐🇸🇬 HY2SG",
+        "🧐🇹🇼 HY2TW",
+        "🧐🇭🇰 HY2HK",
+        "🔐 PROXY",
+        "👑 高级节点",
+        "📉 省流节点",
+        "🆓 手动节点",
+        "🎯 全球直连"
+      ]
     },
     {
       "tag": "🔐🇸🇬 PROXYSG",
       "type": "urltest",
       "url": "http://1.1.1.1/cdn-cgi/trace",
-      "interval": "10m",
-      "idle_timeout": "10m",
+      "interval": "3m",
+      "idle_timeout": "3m",
       "tolerance": 120,
       "outbounds": ["{all}"],
       "filter": [
@@ -37,11 +42,17 @@
       ]
     },
     {
+      "tag": "🆓 手动节点",
+      "type": "selector",
+      "outbounds": ["CustomNode", "{all}"],
+      "filter": [{ "action": "exclude", "type": ["trojan", "hysteria2"] }]
+    },
+    {
       "tag": "🔐🇹🇼 PROXYTW",
       "type": "urltest",
       "url": "http://1.1.1.1/cdn-cgi/trace",
-      "interval": "10m",
-      "idle_timeout": "10m",
+      "interval": "60m",
+      "idle_timeout": "60m",
       "tolerance": 120,
       "outbounds": ["{all}"],
       "filter": [
@@ -53,8 +64,8 @@
       "tag": "🔐🇭🇰 PROXYHK",
       "type": "urltest",
       "url": "http://1.1.1.1/cdn-cgi/trace",
-      "interval": "10m",
-      "idle_timeout": "10m",
+      "interval": "60m",
+      "idle_timeout": "60m",
       "tolerance": 120,
       "outbounds": ["{all}"],
       "filter": [

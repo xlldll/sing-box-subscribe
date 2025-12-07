@@ -1,7 +1,7 @@
 {
   "log": {
     "disabled": false,
-    "level": "warn",
+    "level": "info",
     "timestamp": true,
     "output": "/Users/CHQ/Desktop/Router/SFM/logs.log"
   },
@@ -149,32 +149,30 @@
         "👑 高级节点",
         "📉 省流节点",
         "🧐 HY2",
-        "🆓 手动节点"
-      ]
-    },
-    {
-      "tag": "🆓 手动节点",
-      "type": "selector",
-      "outbounds": [
-        "CustomNode",
-        "{all}"
+        "🆓 手动节点",
+        "🎯 全球直连"
       ]
     },
     {
       "tag": "🧐 HY2",
       "type": "selector",
       "outbounds": [
-        "🧐🇹🇼 HY2TW",
         "🧐🇸🇬 HY2SG",
-        "🧐🇭🇰 HY2HK"
+        "🧐🇹🇼 HY2TW",
+        "🧐🇭🇰 HY2HK",
+        "🔐 PROXY",
+        "👑 高级节点",
+        "📉 省流节点",
+        "🆓 手动节点",
+        "🎯 全球直连"
       ]
     },
     {
       "tag": "🔐🇸🇬 PROXYSG",
       "type": "urltest",
       "url": "http://1.1.1.1/cdn-cgi/trace",
-      "interval": "10m",
-      "idle_timeout": "10m",
+      "interval": "3m",
+      "idle_timeout": "3m",
       "tolerance": 120,
       "outbounds": [
         "{all}"
@@ -196,11 +194,28 @@
       ]
     },
     {
+      "tag": "🆓 手动节点",
+      "type": "selector",
+      "outbounds": [
+        "CustomNode",
+        "{all}"
+      ],
+      "filter": [
+        {
+          "action": "exclude",
+          "type": [
+            "trojan",
+            "hysteria2"
+          ]
+        }
+      ]
+    },
+    {
       "tag": "🔐🇹🇼 PROXYTW",
       "type": "urltest",
       "url": "http://1.1.1.1/cdn-cgi/trace",
-      "interval": "10m",
-      "idle_timeout": "10m",
+      "interval": "60m",
+      "idle_timeout": "60m",
       "tolerance": 120,
       "outbounds": [
         "{all}"
@@ -225,8 +240,8 @@
       "tag": "🔐🇭🇰 PROXYHK",
       "type": "urltest",
       "url": "http://1.1.1.1/cdn-cgi/trace",
-      "interval": "10m",
-      "idle_timeout": "10m",
+      "interval": "60m",
+      "idle_timeout": "60m",
       "tolerance": 120,
       "outbounds": [
         "{all}"
@@ -397,10 +412,6 @@
   "route": {
     "rules": [
       {
-        "inbound": [
-          "tun-in",
-          "dns-in"
-        ],
         "action": "sniff"
       },
       {
@@ -419,6 +430,13 @@
         "action": "hijack-dns"
       },
       {
+        "domain": [
+          "sub1.all.com",
+          "sslw2.top"
+        ],
+        "outbound": "🎯 全球直连"
+      },
+      {
         "ip_is_private": true,
         "outbound": "🎯 全球直连"
       },
@@ -427,6 +445,71 @@
           "cnip"
         ],
         "outbound": "🎯 全球直连"
+      },
+      {
+        "type": "logical",
+        "mode": "and",
+        "rules": [
+          {
+            "protocol": [
+              "quic"
+            ]
+          },
+          {
+            "rule_set": [
+              "cnip"
+            ],
+            "invert": true
+          }
+        ],
+        "outbound": "🧐 HY2"
+      },
+      {
+        "type": "logical",
+        "mode": "and",
+        "rules": [
+          {
+            "network": "udp",
+            "port": [
+              6881,
+              6882,
+              6883,
+              27031,
+              27032,
+              27033,
+              27034,
+              27035,
+              27036
+            ]
+          },
+          {
+            "rule_set": [
+              "cnip"
+            ],
+            "invert": true
+          }
+        ],
+        "outbound": "🧐 HY2"
+      },
+      {
+        "type": "logical",
+        "mode": "and",
+        "rules": [
+          {
+            "network": "tcp",
+            "port": [
+              8080,
+              8443
+            ]
+          },
+          {
+            "rule_set": [
+              "cnip"
+            ],
+            "invert": true
+          }
+        ],
+        "outbound": "🧐 HY2"
       }
     ],
     "rule_set": [

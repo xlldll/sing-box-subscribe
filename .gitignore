@@ -13,3 +13,8 @@ env.bak/
 venv.bak/ 
 config.json
 providers copy.json
+providers copy 2.json
+providers_mac.json
+.gitignore
+providers_route.json
+providers_none.json

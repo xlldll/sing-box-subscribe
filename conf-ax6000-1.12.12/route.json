@@ -2,7 +2,6 @@
   "route": {
     "rules": [
       {
-        "inbound": ["tproxy-in", "dns-in"],
         "action": "sniff"
       },
       {
@@ -23,6 +22,39 @@
       {
         "rule_set": ["cnip"],
         "outbound": "🎯 全球直连"
+      },
+      {
+        "type": "logical",
+        "mode": "and",
+        "rules": [
+          { "protocol": ["quic"] },
+          { "rule_set": ["cnip"], "invert": true }
+        ],
+        "outbound": "🧐 HY2"
+      },
+      {
+        "type": "logical",
+        "mode": "and",
+        "rules": [
+          {
+            "network": "udp",
+            "port": [6881, 6882, 6883, 27031, 27032, 27033, 27034, 27035, 27036]
+          },
+          { "rule_set": ["cnip"], "invert": true }
+        ],
+        "outbound": "🧐 HY2"
+      },
+      {
+        "type": "logical",
+        "mode": "and",
+        "rules": [
+          {
+            "network": "tcp",
+            "port": [8080, 8443]
+          },
+          { "rule_set": ["cnip"], "invert": true }
+        ],
+        "outbound": "🧐 HY2"
       }
     ],
     "rule_set": [
