@@ -170,7 +170,7 @@
             "trojan",
             "vless",
             "hysteria2",
-            "ss"
+            "shadowsocks"
           ]
         }
       ]
@@ -198,7 +198,7 @@
           "type": [
             "trojan",
             "vless",
-            "ss"
+            "shadowsocks"
           ]
         }
       ]
@@ -226,7 +226,7 @@
           "type": [
             "trojan",
             "vless",
-            "ss"
+            "shadowsocks"
           ]
         }
       ]
@@ -254,7 +254,7 @@
           "type": [
             "trojan",
             "vless",
-            "ss"
+            "shadowsocks"
           ]
         }
       ]
@@ -282,7 +282,7 @@
           "type": [
             "trojan",
             "vless",
-            "ss"
+            "shadowsocks"
           ]
         }
       ]
@@ -310,7 +310,7 @@
           "type": [
             "trojan",
             "vless",
-            "ss"
+            "shadowsocks"
           ]
         }
       ]
@@ -429,7 +429,7 @@
             "trojan",
             "vless",
             "hysteria2",
-            "ss"
+            "shadowsocks"
           ]
         }
       ]
@@ -458,7 +458,7 @@
             "trojan",
             "vless",
             "hysteria2",
-            "ss"
+            "shadowsocks"
           ]
         }
       ]
