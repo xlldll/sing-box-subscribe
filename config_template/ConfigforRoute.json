@@ -16,7 +16,9 @@
           "enabled": true,
           "server_name": "223.5.5.5",
           "insecure": false,
-          "alpn": ["h2"]
+          "alpn": [
+            "h2"
+          ]
         },
         "detour": "🎯 全球直连"
       },
@@ -29,29 +31,42 @@
           "enabled": true,
           "server_name": "dns.google",
           "insecure": false,
-          "alpn": ["h2"]
+          "alpn": [
+            "h2"
+          ]
         },
         "detour": "🔐 PROXY"
       }
     ],
     "rules": [
       {
-        "query_type": ["AAAA"],
+        "query_type": [
+          "AAAA"
+        ],
         "action": "reject",
         "no_drop": true
       },
       {
-        "rule_set": ["ads"],
+        "rule_set": [
+          "ads"
+        ],
         "action": "predefined",
         "rcode": "NOERROR",
-        "answer": ["blocked.local. IN A 192.168.99.99"]
+        "answer": [
+          "blocked.local. IN A 192.168.99.99"
+        ]
       },
       {
-        "rule_set": ["cn", "games-cn"],
+        "rule_set": [
+          "cn",
+          "games-cn"
+        ],
         "server": "dns_direct"
       },
       {
-        "rule_set": ["cnip"],
+        "rule_set": [
+          "cnip"
+        ],
         "server": "dns_direct"
       },
       {
@@ -144,11 +159,19 @@
     {
       "tag": "🆓 手动节点",
       "type": "selector",
-      "outbounds": ["{all}", "REJECT"],
+      "outbounds": [
+        "{all}",
+        "REJECT"
+      ],
       "filter": [
         {
           "action": "exclude",
-          "type": ["trojan", "vless", "hysteria2", "ss"]
+          "type": [
+            "trojan",
+            "vless",
+            "hysteria2",
+            "ss"
+          ]
         }
       ]
     },
@@ -159,15 +182,24 @@
       "interval": "15s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": ["{all}", "REJECT"],
+      "outbounds": [
+        "{all}",
+        "REJECT"
+      ],
       "filter": [
         {
           "action": "include",
-          "keywords": ["(?i)(🇸🇬|新加坡|sg|singapore)"]
+          "keywords": [
+            "(?i)(🇸🇬|新加坡|sg|singapore)"
+          ]
         },
         {
           "action": "include",
-          "type": ["trojan", "vless", "ss"]
+          "type": [
+            "trojan",
+            "vless",
+            "ss"
+          ]
         }
       ]
     },
@@ -178,15 +210,24 @@
       "interval": "15s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": ["{all}", "REJECT"],
+      "outbounds": [
+        "{all}",
+        "REJECT"
+      ],
       "filter": [
         {
           "action": "include",
-          "keywords": ["🇹🇼|TW|tw|台湾|臺灣|台|Taiwan"]
+          "keywords": [
+            "🇹🇼|TW|tw|台湾|臺灣|台|Taiwan"
+          ]
         },
         {
           "action": "include",
-          "type": ["trojan", "vless", "ss"]
+          "type": [
+            "trojan",
+            "vless",
+            "ss"
+          ]
         }
       ]
     },
@@ -197,15 +238,24 @@
       "interval": "15s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": ["{all}", "REJECT"],
+      "outbounds": [
+        "{all}",
+        "REJECT"
+      ],
       "filter": [
         {
           "action": "include",
-          "keywords": ["(?i)(🇭🇰|港|hk|hongkong|hong kong)"]
+          "keywords": [
+            "(?i)(🇭🇰|港|hk|hongkong|hong kong)"
+          ]
         },
         {
           "action": "include",
-          "type": ["trojan", "vless", "ss"]
+          "type": [
+            "trojan",
+            "vless",
+            "ss"
+          ]
         }
       ]
     },
@@ -216,15 +266,24 @@
       "interval": "15s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": ["{all}", "REJECT"],
+      "outbounds": [
+        "{all}",
+        "REJECT"
+      ],
       "filter": [
         {
           "action": "include",
-          "keywords": ["(?i)(🇯🇵|JP|jp|日本|Japan)"]
+          "keywords": [
+            "(?i)(🇯🇵|JP|jp|日本|Japan)"
+          ]
         },
         {
           "action": "include",
-          "type": ["trojan", "vless", "ss"]
+          "type": [
+            "trojan",
+            "vless",
+            "ss"
+          ]
         }
       ]
     },
@@ -235,15 +294,24 @@
       "interval": "15s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": ["{all}", "REJECT"],
+      "outbounds": [
+        "{all}",
+        "REJECT"
+      ],
       "filter": [
         {
           "action": "include",
-          "keywords": ["(?i)(🇺🇸|US|us|美国|United States)"]
+          "keywords": [
+            "(?i)(🇺🇸|US|us|美国|United States)"
+          ]
         },
         {
           "action": "include",
-          "type": ["trojan", "vless", "ss"]
+          "type": [
+            "trojan",
+            "vless",
+            "ss"
+          ]
         }
       ]
     },
@@ -254,7 +322,10 @@
       "interval": "15s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": ["{all}", "REJECT"],
+      "outbounds": [
+        "{all}",
+        "REJECT"
+      ],
       "filter": [
         {
           "action": "include",
@@ -262,11 +333,15 @@
         },
         {
           "action": "include",
-          "keywords": ["🇹🇼|TW|tw|台湾|臺灣|台|Taiwan"]
+          "keywords": [
+            "🇹🇼|TW|tw|台湾|臺灣|台|Taiwan"
+          ]
         },
         {
           "action": "include",
-          "type": ["hysteria2"]
+          "type": [
+            "hysteria2"
+          ]
         }
       ]
     },
@@ -277,7 +352,10 @@
       "interval": "15s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": ["{all}", "REJECT"],
+      "outbounds": [
+        "{all}",
+        "REJECT"
+      ],
       "filter": [
         {
           "action": "include",
@@ -285,11 +363,15 @@
         },
         {
           "action": "include",
-          "keywords": ["(?i)(🇸🇬|新|sg|singapore)"]
+          "keywords": [
+            "(?i)(🇸🇬|新|sg|singapore)"
+          ]
         },
         {
           "action": "include",
-          "type": ["hysteria2"]
+          "type": [
+            "hysteria2"
+          ]
         }
       ]
     },
@@ -300,7 +382,10 @@
       "interval": "15s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": ["{all}", "REJECT"],
+      "outbounds": [
+        "{all}",
+        "REJECT"
+      ],
       "filter": [
         {
           "action": "include",
@@ -308,11 +393,15 @@
         },
         {
           "action": "include",
-          "keywords": ["(?i)(🇭🇰|港|hk|hongkong|hong kong)"]
+          "keywords": [
+            "(?i)(🇭🇰|港|hk|hongkong|hong kong)"
+          ]
         },
         {
           "action": "include",
-          "type": ["hysteria2"]
+          "type": [
+            "hysteria2"
+          ]
         }
       ]
     },
@@ -323,7 +412,10 @@
       "interval": "15s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": ["{all}", "REJECT"],
+      "outbounds": [
+        "{all}",
+        "REJECT"
+      ],
       "filter": [
         {
           "action": "include",
@@ -333,7 +425,12 @@
         },
         {
           "action": "exclude",
-          "type": ["trojan", "vless", "hysteria2", "ss"]
+          "type": [
+            "trojan",
+            "vless",
+            "hysteria2",
+            "ss"
+          ]
         }
       ]
     },
@@ -344,32 +441,45 @@
       "interval": "15s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": ["{all}", "REJECT"],
+      "outbounds": [
+        "{all}",
+        "REJECT"
+      ],
       "filter": [
         {
           "action": "include",
-          "keywords": ["0\\.[1-5]|低倍率|省流|大流量"]
+          "keywords": [
+            "0\\.[1-5]|低倍率|省流|大流量"
+          ]
         },
         {
           "action": "exclude",
-          "type": ["trojan", "vless", "hysteria2", "ss"]
+          "type": [
+            "trojan",
+            "vless",
+            "hysteria2",
+            "ss"
+          ]
         }
       ]
     },
     {
       "tag": "🎯 全球直连",
       "type": "selector",
-      "outbounds": ["DIRECT"]
+      "outbounds": [
+        "DIRECT"
+      ]
     },
     {
       "tag": "🔴 全球拦截",
       "type": "selector",
-      "outbounds": ["REJECT"]
+      "outbounds": [
+        "REJECT"
+      ]
     },
     {
       "tag": "DIRECT",
-      "type": "direct",
-      "voer": "1"
+      "type": "direct"
     },
     {
       "tag": "REJECT",
@@ -389,7 +499,9 @@
             "port": 53
           },
           {
-            "protocol": ["dns"]
+            "protocol": [
+              "dns"
+            ]
           }
         ],
         "action": "hijack-dns"
@@ -399,7 +511,9 @@
         "outbound": "🎯 全球直连"
       },
       {
-        "rule_set": ["cnip"],
+        "rule_set": [
+          "cnip"
+        ],
         "outbound": "🎯 全球直连"
       },
       {
@@ -407,10 +521,14 @@
         "mode": "and",
         "rules": [
           {
-            "protocol": ["quic"]
+            "protocol": [
+              "quic"
+            ]
           },
           {
-            "rule_set": ["cnip"],
+            "rule_set": [
+              "cnip"
+            ],
             "invert": true
           }
         ],
@@ -422,10 +540,22 @@
         "rules": [
           {
             "network": "udp",
-            "port": [6881, 6882, 6883, 27031, 27032, 27033, 27034, 27035, 27036]
+            "port": [
+              6881,
+              6882,
+              6883,
+              27031,
+              27032,
+              27033,
+              27034,
+              27035,
+              27036
+            ]
           },
           {
-            "rule_set": ["cnip"],
+            "rule_set": [
+              "cnip"
+            ],
             "invert": true
           }
         ],
@@ -437,10 +567,15 @@
         "rules": [
           {
             "network": "tcp",
-            "port": [8080, 8443]
+            "port": [
+              8080,
+              8443
+            ]
           },
           {
-            "rule_set": ["cnip"],
+            "rule_set": [
+              "cnip"
+            ],
             "invert": true
           }
         ],
