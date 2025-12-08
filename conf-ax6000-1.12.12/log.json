@@ -3,6 +3,6 @@
     "disabled": false,
     "level": "warn",
     "timestamp": true,
-    "output": "/overlay/ShellCrash/SB112/sb.log"
+    "output": "/tmp/log/singbox.log"
   }
 }

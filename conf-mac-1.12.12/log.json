@@ -1,7 +1,7 @@
 {
   "log": {
     "disabled": false,
-    "level": "info",
+    "level": "warn",
     "timestamp": true,
     "output": "/Users/CHQ/Desktop/Router/SFM/logs.log"
   }

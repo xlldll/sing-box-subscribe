@@ -2,7 +2,7 @@
   "experimental": {
     "cache_file": {
       "enabled": true,
-      "path": "/overlay/ShellCrash/SB112/cache.db",
+      "path": "/tmp/log/singbox_cache.db",
       "store_rdrc": true
     },
     "clash_api": {
