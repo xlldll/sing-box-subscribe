@@ -131,9 +131,11 @@
       "tag": "🔐 PROXY",
       "type": "selector",
       "outbounds": [
-        "🔐🇸🇬 PROXYSG",
-        "🔐🇹🇼 PROXYTW",
-        "🔐🇭🇰 PROXYHK",
+        "🌍🇸🇬 SG",
+        "🌍🇹🇼 TW",
+        "🌍🇭🇰 HK",
+        "🌍🇯🇵 JP",
+        "🌍🇺🇸 US",
         "👑 高级节点",
         "📉 省流节点",
         "🆓 手动节点",
@@ -159,7 +161,7 @@
       "type": "selector",
       "outbounds": [
         "{all}",
-        "DUMMY_FAST"
+        "REJECT"
       ],
       "filter": [
         {
@@ -167,13 +169,14 @@
           "type": [
             "trojan",
             "vless",
-            "hysteria2"
+            "hysteria2",
+            "ss"
           ]
         }
       ]
     },
     {
-      "tag": "🔐🇸🇬 PROXYSG",
+      "tag": "🌍🇸🇬 SG",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
       "interval": "15s",
@@ -181,7 +184,7 @@
       "tolerance": 80,
       "outbounds": [
         "{all}",
-        "DUMMY_FAST"
+        "REJECT"
       ],
       "filter": [
         {
@@ -194,13 +197,14 @@
           "action": "include",
           "type": [
             "trojan",
-            "vless"
+            "vless",
+            "ss"
           ]
         }
       ]
     },
     {
-      "tag": "🔐🇹🇼 PROXYTW",
+      "tag": "🌍🇹🇼 TW",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
       "interval": "15s",
@@ -208,7 +212,7 @@
       "tolerance": 80,
       "outbounds": [
         "{all}",
-        "DUMMY_FAST"
+        "REJECT"
       ],
       "filter": [
         {
@@ -221,13 +225,14 @@
           "action": "include",
           "type": [
             "trojan",
-            "vless"
+            "vless",
+            "ss"
           ]
         }
       ]
     },
     {
-      "tag": "🔐🇭🇰 PROXYHK",
+      "tag": "🌍🇭🇰 HK",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
       "interval": "15s",
@@ -235,7 +240,7 @@
       "tolerance": 80,
       "outbounds": [
         "{all}",
-        "DUMMY_FAST"
+        "REJECT"
       ],
       "filter": [
         {
@@ -248,13 +253,14 @@
           "action": "include",
           "type": [
             "trojan",
-            "vless"
+            "vless",
+            "ss"
           ]
         }
       ]
     },
     {
-      "tag": "🔐🇯🇵 PROXYJP",
+      "tag": "🌍🇯🇵 JP",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
       "interval": "15s",
@@ -262,7 +268,7 @@
       "tolerance": 80,
       "outbounds": [
         "{all}",
-        "DUMMY_FAST"
+        "REJECT"
       ],
       "filter": [
         {
@@ -275,13 +281,14 @@
           "action": "include",
           "type": [
             "trojan",
-            "vless"
+            "vless",
+            "ss"
           ]
         }
       ]
     },
     {
-      "tag": "🔐🇺🇸 PROXYUS",
+      "tag": "🌍🇺🇸 US",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
       "interval": "15s",
@@ -289,13 +296,21 @@
       "tolerance": 80,
       "outbounds": [
         "{all}",
-        "DUMMY_FAST"
+        "REJECT"
       ],
       "filter": [
         {
           "action": "include",
           "keywords": [
             "(?i)(🇺🇸|US|us|美国|United States)"
+          ]
+        },
+        {
+          "action": "include",
+          "type": [
+            "trojan",
+            "vless",
+            "ss"
           ]
         }
       ]
@@ -309,7 +324,7 @@
       "tolerance": 80,
       "outbounds": [
         "{all}",
-        "DUMMY_FAST"
+        "REJECT"
       ],
       "filter": [
         {
@@ -339,7 +354,7 @@
       "tolerance": 80,
       "outbounds": [
         "{all}",
-        "DUMMY_FAST"
+        "REJECT"
       ],
       "filter": [
         {
@@ -369,7 +384,7 @@
       "tolerance": 80,
       "outbounds": [
         "{all}",
-        "DUMMY_FAST"
+        "REJECT"
       ],
       "filter": [
         {
@@ -399,7 +414,7 @@
       "tolerance": 80,
       "outbounds": [
         "{all}",
-        "DUMMY_FAST"
+        "REJECT"
       ],
       "filter": [
         {
@@ -413,7 +428,8 @@
           "type": [
             "trojan",
             "vless",
-            "hysteria2"
+            "hysteria2",
+            "ss"
           ]
         }
       ]
@@ -427,7 +443,7 @@
       "tolerance": 80,
       "outbounds": [
         "{all}",
-        "DUMMY_FAST"
+        "REJECT"
       ],
       "filter": [
         {
@@ -441,7 +457,8 @@
           "type": [
             "trojan",
             "vless",
-            "hysteria2"
+            "hysteria2",
+            "ss"
           ]
         }
       ]
@@ -467,12 +484,6 @@
     {
       "tag": "REJECT",
       "type": "block"
-    },
-    {
-      "tag": "DUMMY_FAST",
-      "type": "direct",
-      "override_address": "10.255.255.1",
-      "override_port": 1
     }
   ],
   "route": {

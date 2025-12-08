@@ -4,9 +4,11 @@
       "tag": "🔐 PROXY",
       "type": "selector",
       "outbounds": [
-        "🔐🇸🇬 PROXYSG",
-        "🔐🇹🇼 PROXYTW",
-        "🔐🇭🇰 PROXYHK",
+        "🌍🇸🇬 SG",
+        "🌍🇹🇼 TW",
+        "🌍🇭🇰 HK",
+        "🌍🇯🇵 JP",
+        "🌍🇺🇸 US",
         "👑 高级节点",
         "📉 省流节点",
         "🆓 手动节点",
@@ -30,82 +32,83 @@
     {
       "tag": "🆓 手动节点",
       "type": "selector",
-      "outbounds": ["{all}", "DUMMY_FAST"],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
-        { "action": "exclude", "type": ["trojan", "vless", "hysteria2"] }
+        { "action": "exclude", "type": ["trojan", "vless", "hysteria2", "ss"] }
       ]
     },
     {
-      "tag": "🔐🇸🇬 PROXYSG",
+      "tag": "🌍🇸🇬 SG",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
       "interval": "15s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": ["{all}", "DUMMY_FAST"],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         { "action": "include", "keywords": ["(?i)(🇸🇬|新加坡|sg|singapore)"] },
-        { "action": "include", "type": ["trojan", "vless"] }
+        { "action": "include", "type": ["trojan", "vless", "ss"] }
       ]
     },
     {
-      "tag": "🔐🇹🇼 PROXYTW",
+      "tag": "🌍🇹🇼 TW",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
       "interval": "15s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": ["{all}", "DUMMY_FAST"],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         { "action": "include", "keywords": ["🇹🇼|TW|tw|台湾|臺灣|台|Taiwan"] },
-        { "action": "include", "type": ["trojan", "vless"] }
+        { "action": "include", "type": ["trojan", "vless", "ss"] }
       ]
     },
     {
-      "tag": "🔐🇭🇰 PROXYHK",
+      "tag": "🌍🇭🇰 HK",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
       "interval": "15s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": ["{all}", "DUMMY_FAST"],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         {
           "action": "include",
           "keywords": ["(?i)(🇭🇰|港|hk|hongkong|hong kong)"]
         },
-        { "action": "include", "type": ["trojan", "vless"] }
+        { "action": "include", "type": ["trojan", "vless", "ss"] }
       ]
     },
     {
-      "tag": "🔐🇯🇵 PROXYJP",
+      "tag": "🌍🇯🇵 JP",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
       "interval": "15s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": ["{all}", "DUMMY_FAST"],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         {
           "action": "include",
           "keywords": ["(?i)(🇯🇵|JP|jp|日本|Japan)"]
         },
-        { "action": "include", "type": ["trojan", "vless"] }
+        { "action": "include", "type": ["trojan", "vless", "ss"] }
       ]
     },
     {
-      "tag": "🔐🇺🇸 PROXYUS",
+      "tag": "🌍🇺🇸 US",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
       "interval": "15s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": ["{all}", "DUMMY_FAST"],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         {
           "action": "include",
           "keywords": ["(?i)(🇺🇸|US|us|美国|United States)"]
-        }
+        },
+        { "action": "include", "type": ["trojan", "vless", "ss"] }
       ]
     },
     {
@@ -115,7 +118,7 @@
       "interval": "15s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": ["{all}", "DUMMY_FAST"],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         {
           "action": "include",
@@ -132,7 +135,7 @@
       "interval": "15s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": ["{all}", "DUMMY_FAST"],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         {
           "action": "include",
@@ -149,7 +152,7 @@
       "interval": "15s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": ["{all}", "DUMMY_FAST"],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         {
           "action": "include",
@@ -169,7 +172,7 @@
       "interval": "15s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": ["{all}", "DUMMY_FAST"],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         {
           "action": "include",
@@ -177,7 +180,7 @@
             "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)"
           ]
         },
-        { "action": "exclude", "type": ["trojan", "vless", "hysteria2"] }
+        { "action": "exclude", "type": ["trojan", "vless", "hysteria2", "ss"] }
       ]
     },
     {
@@ -187,24 +190,18 @@
       "interval": "15s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": ["{all}", "DUMMY_FAST"],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         {
           "action": "include",
           "keywords": ["0\\.[1-5]|低倍率|省流|大流量"]
         },
-        { "action": "exclude", "type": ["trojan", "vless", "hysteria2"] }
+        { "action": "exclude", "type": ["trojan", "vless", "hysteria2", "ss"] }
       ]
     },
     { "tag": "🎯 全球直连", "type": "selector", "outbounds": ["DIRECT"] },
     { "tag": "🔴 全球拦截", "type": "selector", "outbounds": ["REJECT"] },
     { "tag": "DIRECT", "type": "direct" },
-    { "tag": "REJECT", "type": "block" },
-    {
-      "tag": "DUMMY_FAST",
-      "type": "direct",
-      "override_address": "10.255.255.1",
-      "override_port": 1
-    }
+    { "tag": "REJECT", "type": "block" }
   ]
 }
