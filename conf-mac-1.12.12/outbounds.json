@@ -17,10 +17,10 @@
       "tag": "🧐 HY2",
       "type": "selector",
       "outbounds": [
+        "🔐 PROXY",
         "🧐🇸🇬 HY2SG",
         "🧐🇹🇼 HY2TW",
         "🧐🇭🇰 HY2HK",
-        "🔐 PROXY",
         "👑 高级节点",
         "📉 省流节点",
         "🆓 手动节点",
@@ -28,32 +28,34 @@
       ]
     },
     {
+      "tag": "🆓 手动节点",
+      "type": "selector",
+      "outbounds": ["{all}", "DUMMY_FAST"],
+      "filter": [
+        { "action": "exclude", "type": ["trojan", "vless", "hysteria2"] }
+      ]
+    },
+    {
       "tag": "🔐🇸🇬 PROXYSG",
       "type": "urltest",
-      "url": "http://1.1.1.1/cdn-cgi/trace",
-      "interval": "3m",
+      "url": "https://www.google.com/generate_204",
+      "interval": "15s",
       "idle_timeout": "3m",
-      "tolerance": 120,
-      "outbounds": ["{all}"],
+      "tolerance": 80,
+      "outbounds": ["{all}", "DUMMY_FAST"],
       "filter": [
-        { "action": "include", "keywords": ["(?i)(🇸🇬|新|sg|singapore)"] },
+        { "action": "include", "keywords": ["(?i)(🇸🇬|新加坡|sg|singapore)"] },
         { "action": "include", "type": ["trojan", "vless"] }
       ]
     },
     {
-      "tag": "🆓 手动节点",
-      "type": "selector",
-      "outbounds": ["CustomNode", "{all}"],
-      "filter": [{ "action": "exclude", "type": ["trojan", "hysteria2"] }]
-    },
-    {
       "tag": "🔐🇹🇼 PROXYTW",
       "type": "urltest",
-      "url": "http://1.1.1.1/cdn-cgi/trace",
-      "interval": "60m",
-      "idle_timeout": "60m",
-      "tolerance": 120,
-      "outbounds": ["{all}"],
+      "url": "https://www.google.com/generate_204",
+      "interval": "15s",
+      "idle_timeout": "3m",
+      "tolerance": 80,
+      "outbounds": ["{all}", "DUMMY_FAST"],
       "filter": [
         { "action": "include", "keywords": ["🇹🇼|TW|tw|台湾|臺灣|台|Taiwan"] },
         { "action": "include", "type": ["trojan", "vless"] }
@@ -62,11 +64,11 @@
     {
       "tag": "🔐🇭🇰 PROXYHK",
       "type": "urltest",
-      "url": "http://1.1.1.1/cdn-cgi/trace",
-      "interval": "60m",
-      "idle_timeout": "60m",
-      "tolerance": 120,
-      "outbounds": ["{all}"],
+      "url": "https://www.google.com/generate_204",
+      "interval": "15s",
+      "idle_timeout": "3m",
+      "tolerance": 80,
+      "outbounds": ["{all}", "DUMMY_FAST"],
       "filter": [
         {
           "action": "include",
@@ -76,9 +78,44 @@
       ]
     },
     {
+      "tag": "🔐🇯🇵 PROXYJP",
+      "type": "urltest",
+      "url": "https://www.google.com/generate_204",
+      "interval": "15s",
+      "idle_timeout": "3m",
+      "tolerance": 80,
+      "outbounds": ["{all}", "DUMMY_FAST"],
+      "filter": [
+        {
+          "action": "include",
+          "keywords": ["(?i)(🇯🇵|JP|jp|日本|Japan)"]
+        },
+        { "action": "include", "type": ["trojan", "vless"] }
+      ]
+    },
+    {
+      "tag": "🔐🇺🇸 PROXYUS",
+      "type": "urltest",
+      "url": "https://www.google.com/generate_204",
+      "interval": "15s",
+      "idle_timeout": "3m",
+      "tolerance": 80,
+      "outbounds": ["{all}", "DUMMY_FAST"],
+      "filter": [
+        {
+          "action": "include",
+          "keywords": ["(?i)(🇺🇸|US|us|美国|United States)"]
+        }
+      ]
+    },
+    {
       "tag": "🧐🇹🇼 HY2TW",
-      "type": "selector",
-      "outbounds": ["{all}", "🆓 手动节点"],
+      "type": "urltest",
+      "url": "http://1.1.1.1/cdn-cgi/trace",
+      "interval": "15s",
+      "idle_timeout": "3m",
+      "tolerance": 80,
+      "outbounds": ["{all}", "DUMMY_FAST"],
       "filter": [
         {
           "action": "include",
@@ -90,8 +127,12 @@
     },
     {
       "tag": "🧐🇸🇬 HY2SG",
-      "type": "selector",
-      "outbounds": ["{all}", "🆓 手动节点"],
+      "type": "urltest",
+      "url": "http://1.1.1.1/cdn-cgi/trace",
+      "interval": "15s",
+      "idle_timeout": "3m",
+      "tolerance": 80,
+      "outbounds": ["{all}", "DUMMY_FAST"],
       "filter": [
         {
           "action": "include",
@@ -103,8 +144,12 @@
     },
     {
       "tag": "🧐🇭🇰 HY2HK",
-      "type": "selector",
-      "outbounds": ["{all}", "🆓 手动节点"],
+      "type": "urltest",
+      "url": "http://1.1.1.1/cdn-cgi/trace",
+      "interval": "15s",
+      "idle_timeout": "3m",
+      "tolerance": 80,
+      "outbounds": ["{all}", "DUMMY_FAST"],
       "filter": [
         {
           "action": "include",
@@ -119,26 +164,36 @@
     },
     {
       "tag": "👑 高级节点",
-      "type": "selector",
-      "outbounds": ["{all}", "🆓 手动节点"],
+      "type": "urltest",
+      "url": "https://www.google.com/generate_204",
+      "interval": "15s",
+      "idle_timeout": "3m",
+      "tolerance": 80,
+      "outbounds": ["{all}", "DUMMY_FAST"],
       "filter": [
         {
           "action": "include",
           "keywords": [
             "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)"
           ]
-        }
+        },
+        { "action": "exclude", "type": ["trojan", "vless", "hysteria2"] }
       ]
     },
     {
       "tag": "📉 省流节点",
-      "type": "selector",
-      "outbounds": ["{all}", "🆓 手动节点"],
+      "type": "urltest",
+      "url": "https://www.google.com/generate_204",
+      "interval": "15s",
+      "idle_timeout": "3m",
+      "tolerance": 80,
+      "outbounds": ["{all}", "DUMMY_FAST"],
       "filter": [
         {
           "action": "include",
           "keywords": ["0\\.[1-5]|低倍率|省流|大流量"]
-        }
+        },
+        { "action": "exclude", "type": ["trojan", "vless", "hysteria2"] }
       ]
     },
     { "tag": "🎯 全球直连", "type": "selector", "outbounds": ["DIRECT"] },
@@ -146,18 +201,10 @@
     { "tag": "DIRECT", "type": "direct" },
     { "tag": "REJECT", "type": "block" },
     {
-      "tag": "CustomNode",
-      "type": "hysteria2",
-      "server": "1sg001.476579.xyz",
-      "server_port": 8080,
-      "password": "311f32f9-ab81-4ef0-80f8-7e7730ec4b54",
-      "up_mbps": 50,
-      "down_mbps": 100,
-      "tls": {
-        "enabled": true,
-        "server_name": "1sg001.476579.xyz",
-        "insecure": false
-      }
+      "tag": "DUMMY_FAST",
+      "type": "direct",
+      "override_address": "10.255.255.1",
+      "override_port": 1
     }
   ]
 }
