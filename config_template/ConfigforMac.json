@@ -537,7 +537,7 @@
         "action": "hijack-dns"
       },
       {
-        "domain": [
+        "domain_suffix": [
           "theepochtimes.com",
           "epochtimes.com",
           "pincong.rocks",
