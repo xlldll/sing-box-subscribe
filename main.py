@@ -411,6 +411,7 @@ def get_nodes(url):
 
         # sing-box 配置：从 outbounds 中提取真实节点
         elif 'outbounds' in content:
+            print("sing-box 配置")
             outbounds = []
             # 排除不需要的类型，仅保留真实出站节点
             excluded_types = {"selector", "urltest", "direct", "block", "dns"}
@@ -420,6 +421,7 @@ def get_nodes(url):
                 if outbound.get("type") not in excluded_types
             ]
             outbounds.extend(filtered_outbounds)
+            print(outbounds)
             return outbounds
 
     # content 为纯文本：按通用节点分享链接格式解析
@@ -447,6 +449,7 @@ def parse_content(content):
         list[dict]: 解析得到的节点列表。
     """
     nodelist = []
+    print("parse_content")
     for t in content.splitlines():
         t = t.strip()
         if len(t) == 0:
