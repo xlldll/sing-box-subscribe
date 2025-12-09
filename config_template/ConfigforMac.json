@@ -274,6 +274,12 @@
             "vless",
             "shadowsocks"
           ]
+        },
+        {
+          "action": "exclude",
+          "keywords": [
+            "LM"
+          ]
         }
       ]
     },
@@ -301,6 +307,12 @@
             "trojan",
             "vless",
             "shadowsocks"
+          ]
+        },
+        {
+          "action": "exclude",
+          "keywords": [
+            "LM"
           ]
         }
       ]
@@ -578,7 +590,7 @@
           "visiontimes.com",
           "secretchina.com"
         ],
-        "server": "⚡️ 高压节点"
+        "outbound": "⚡️ 高压节点"
       },
       {
         "ip_is_private": true,
