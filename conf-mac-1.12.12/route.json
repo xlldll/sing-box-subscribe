@@ -16,8 +16,32 @@
         "action": "hijack-dns"
       },
       {
-        "domain": ["sub1.all.com", "sslw2.top"],
-        "outbound": "🎯 全球直连"
+        "domain": [
+          "theepochtimes.com",
+          "epochtimes.com",
+          "pincong.rocks",
+          "rfa.org",
+          "voanews.com",
+          "voachinese.com",
+          "hongkongfp.com",
+          "chinadigitaltimes.net",
+          "chinadigitaltimes.com",
+          "ntdtv.com",
+          "ntd.com",
+          "bbc.com",
+          "nytimes.com",
+          "reuters.com",
+          "theguardian.com",
+          "abc.net.au",
+          "wsj.com",
+          "ft.com",
+          "bbc.co.uk",
+          "hkfp.com",
+          "hkfp.net",
+          "visiontimes.com",
+          "secretchina.com"
+        ],
+        "server": "⚡️ 高压节点"
       },
       {
         "ip_is_private": true,

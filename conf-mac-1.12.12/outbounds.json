@@ -50,7 +50,8 @@
       "outbounds": ["{all}", "REJECT"],
       "filter": [
         { "action": "include", "keywords": ["(?i)(🇸🇬|新加坡|sg|singapore)"] },
-        { "action": "include", "type": ["trojan", "vless", "shadowsocks"] }
+        { "action": "include", "type": ["trojan", "vless", "shadowsocks"] },
+        { "action": "exclude", "keywords": ["LM"] }
       ]
     },
     {
@@ -63,7 +64,8 @@
       "outbounds": ["{all}", "REJECT"],
       "filter": [
         { "action": "include", "keywords": ["🇹🇼|TW|tw|台湾|臺灣|台|Taiwan"] },
-        { "action": "include", "type": ["trojan", "vless", "shadowsocks"] }
+        { "action": "include", "type": ["trojan", "vless", "shadowsocks"] },
+        { "action": "exclude", "keywords": ["LM"] }
       ]
     },
     {
@@ -79,7 +81,8 @@
           "action": "include",
           "keywords": ["(?i)(🇭🇰|港|hk|hongkong|hong kong)"]
         },
-        { "action": "include", "type": ["trojan", "vless", "shadowsocks"] }
+        { "action": "include", "type": ["trojan", "vless", "shadowsocks"] },
+        { "action": "exclude", "keywords": ["LM"] }
       ]
     },
     {
