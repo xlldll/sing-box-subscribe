@@ -1,0 +1,7 @@
+{
+  "log": {
+    "disabled": true,
+    "level": "warn",
+    "timestamp": true
+  }
+}

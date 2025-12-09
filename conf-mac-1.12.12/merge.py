@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import json
 import os
 
@@ -87,7 +88,7 @@ if route_cfg is not None:
     final_config["route"] = route_cfg
 
 # 5. 写出到 sing-box.json（覆盖旧文件）
-output_path = os.path.join("../config_template", "ConfigforMac.json")
+output_path = os.path.join(CONFIG_DIR, "../config_template/ConfigforMac.json")
 with open(output_path, "w", encoding="utf-8") as f:
     json.dump(final_config, f, indent=2, ensure_ascii=False)
 

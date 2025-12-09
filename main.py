@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import json, os, tool, time, requests, sys, importlib, argparse, yaml, ruamel.yaml
 import re
 from datetime import datetime

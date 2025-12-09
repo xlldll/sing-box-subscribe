@@ -10,6 +10,7 @@ from main import generate_config_from_providers  # 使用 main.py 中的封装�
 	•	SUB_CONFIG（可选，老默认）
 	•	SUB_CONFIG_MAC（给 Mac/SFM 用）
 	•	SUB_CONFIG_ROUTER（给路由器用）
+    •	SUB_CONFIG_IOS（给IOS用）
 值都填成 一行的 JSON 字符串（就是你刚才调好的那种）。
 
 2）访问方式：
@@ -17,6 +18,8 @@ from main import generate_config_from_providers  # 使用 main.py 中的封装�
 	•	https://XXX.vercel.app/api/generate?profile=mac
 	•	路由器那套：
 	•	https://XXX.vercel.app/api/generate?profile=router
+    •	IOS那套：
+	•	https://XXX.vercel.app/api/generate?profile=ios
 	•	老方式（如果你保留 SUB_CONFIG）：
 	•	https://XXX.vercel.app/api/generate
 
@@ -90,7 +93,8 @@ class handler(BaseHTTPRequestHandler):
         profile_env_map = {
             "default": "SUB_CONFIG",       # 兼容旧逻辑
             "mac": "SUB_CONFIG_MAC",      # 给 Mac / SFM 用
-            "router": "SUB_CONFIG_ROUTER"  # 给路由器用
+            "router": "SUB_CONFIG_ROUTER",  # 给路由器用
+            "ios": "SUB_CONFIG_IOS"       # 给IOS用
         }
         env_key = profile_env_map.get(profile, "SUB_CONFIG")
 
