@@ -16,6 +16,10 @@
         "action": "hijack-dns"
       },
       {
+        "domain_suffix": ["cn2gias.uk", "emby.moe"],
+        "outbound": "🧐 HY2"
+      },
+      {
         "domain_suffix": [
           "theepochtimes.com",
           "epochtimes.com",
@@ -41,7 +45,7 @@
           "visiontimes.com",
           "secretchina.com"
         ],
-        "outbound": "⚡️ 高压节点"
+        "outbound": "👊 所有节点"
       },
       {
         "ip_is_private": true,
@@ -50,10 +54,6 @@
       {
         "rule_set": ["cnip"],
         "outbound": "🎯 全球直连"
-      },
-      {
-        "domain_suffix": ["cn2gias.uk"],
-        "outbound": "🧐 HY2"
       },
       {
         "type": "logical",

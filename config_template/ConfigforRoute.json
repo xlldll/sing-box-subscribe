@@ -139,7 +139,8 @@
         "👑 高级节点",
         "📉 省流节点",
         "🆓 手动节点",
-        "🎯 全球直连"
+        "🎯 全球直连",
+        "👊 所有节点"
       ]
     },
     {
@@ -153,7 +154,8 @@
         "👑 高级节点",
         "📉 省流节点",
         "🆓 手动节点",
-        "🎯 全球直连"
+        "🎯 全球直连",
+        "👊 所有节点"
       ]
     },
     {
@@ -171,6 +173,30 @@
             "vless",
             "hysteria2",
             "shadowsocks"
+          ]
+        },
+        {
+          "action": "exclude",
+          "keywords": [
+            "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "0\\.[1-5]|低倍率|省流|大流量|下载|限速"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "👊 所有节点",
+      "type": "selector",
+      "outbounds": [
+        "{all}",
+        "REJECT"
+      ],
+      "filter": [
+        {
+          "action": "exclude",
+          "keywords": [
+            "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "0\\.[1-5]|低倍率|省流|大流量|下载|限速"
           ]
         }
       ]
@@ -200,6 +226,13 @@
             "vless",
             "shadowsocks"
           ]
+        },
+        {
+          "action": "exclude",
+          "keywords": [
+            "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "0\\.[1-5]|低倍率|省流|大流量|下载|限速"
+          ]
         }
       ]
     },
@@ -227,6 +260,13 @@
             "trojan",
             "vless",
             "shadowsocks"
+          ]
+        },
+        {
+          "action": "exclude",
+          "keywords": [
+            "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "0\\.[1-5]|低倍率|省流|大流量|下载|限速"
           ]
         }
       ]
@@ -256,6 +296,13 @@
             "vless",
             "shadowsocks"
           ]
+        },
+        {
+          "action": "exclude",
+          "keywords": [
+            "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "0\\.[1-5]|低倍率|省流|大流量|下载|限速"
+          ]
         }
       ]
     },
@@ -284,6 +331,13 @@
             "vless",
             "shadowsocks"
           ]
+        },
+        {
+          "action": "exclude",
+          "keywords": [
+            "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "0\\.[1-5]|低倍率|省流|大流量|下载|限速"
+          ]
         }
       ]
     },
@@ -311,6 +365,13 @@
             "trojan",
             "vless",
             "shadowsocks"
+          ]
+        },
+        {
+          "action": "exclude",
+          "keywords": [
+            "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "0\\.[1-5]|低倍率|省流|大流量|下载|限速"
           ]
         }
       ]
@@ -425,11 +486,10 @@
         },
         {
           "action": "exclude",
-          "type": [
-            "trojan",
-            "vless",
-            "hysteria2",
-            "shadowsocks"
+          "keywords": [
+            "0\\.[1-5]|低倍率|省流|大流量|下载",
+            "限速",
+            "LM"
           ]
         }
       ]
@@ -449,16 +509,15 @@
         {
           "action": "include",
           "keywords": [
-            "0\\.[1-5]|低倍率|省流|大流量"
+            "0\\.[1-5]|低倍率|省流|大流量|下载"
           ]
         },
         {
           "action": "exclude",
-          "type": [
-            "trojan",
-            "vless",
-            "hysteria2",
-            "shadowsocks"
+          "keywords": [
+            "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "限速",
+            "LM"
           ]
         }
       ]
@@ -508,6 +567,13 @@
       },
       {
         "domain_suffix": [
+          "cn2gias.uk",
+          "emby.moe"
+        ],
+        "outbound": "🧐 HY2"
+      },
+      {
+        "domain_suffix": [
           "theepochtimes.com",
           "epochtimes.com",
           "pincong.rocks",
@@ -532,7 +598,7 @@
           "visiontimes.com",
           "secretchina.com"
         ],
-        "outbound": "⚡️ 高压节点"
+        "outbound": "👊 所有节点"
       },
       {
         "ip_is_private": true,
@@ -546,7 +612,8 @@
       },
       {
         "domain_suffix": [
-          "cn2gias.uk"
+          "cn2gias.uk",
+          "emby.moe"
         ],
         "outbound": "🧐 HY2"
       },
