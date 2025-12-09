@@ -41,34 +41,6 @@
         "answer": ["blocked.local. IN A 192.168.99.99"]
       },
       {
-        "domain": [
-          "theepochtimes.com",
-          "epochtimes.com",
-          "pincong.rocks",
-          "rfa.org",
-          "voanews.com",
-          "voachinese.com",
-          "hongkongfp.com",
-          "chinadigitaltimes.net",
-          "chinadigitaltimes.com",
-          "ntdtv.com",
-          "ntd.com",
-          "bbc.com",
-          "nytimes.com",
-          "reuters.com",
-          "theguardian.com",
-          "abc.net.au",
-          "wsj.com",
-          "ft.com",
-          "bbc.co.uk",
-          "hkfp.com",
-          "hkfp.net",
-          "visiontimes.com",
-          "secretchina.com"
-        ],
-        "server": "⚡️ 高压节点"
-      },
-      {
         "rule_set": ["cn", "games-cn"],
         "server": "dns_direct"
       },
