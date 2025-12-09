@@ -52,6 +52,10 @@
         "outbound": "🎯 全球直连"
       },
       {
+        "domain_suffix": ["cn2gias.uk"],
+        "outbound": "🧐 HY2"
+      },
+      {
         "type": "logical",
         "mode": "and",
         "rules": [
