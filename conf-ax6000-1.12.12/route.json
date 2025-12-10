@@ -121,6 +121,7 @@
     ],
     "final": "🔐 PROXY",
     "auto_detect_interface": true,
-    "default_mark": 23333
+    "default_mark": 23333,
+    "default_domain_resolver": "dns_direct"
   }
 }

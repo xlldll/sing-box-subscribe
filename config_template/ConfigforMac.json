@@ -590,6 +590,7 @@
           "epochtimes.com",
           "pincong.rocks",
           "rfa.org",
+          "rfi.fr",
           "voanews.com",
           "voachinese.com",
           "hongkongfp.com",
@@ -719,6 +720,7 @@
       }
     ],
     "final": "🔐 PROXY",
-    "auto_detect_interface": true
+    "auto_detect_interface": true,
+    "default_domain_resolver": "dns_direct"
   }
 }

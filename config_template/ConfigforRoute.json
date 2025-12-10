@@ -611,13 +611,6 @@
         "outbound": "🎯 全球直连"
       },
       {
-        "domain_suffix": [
-          "cn2gias.uk",
-          "emby.moe"
-        ],
-        "outbound": "🧐 HY2"
-      },
-      {
         "type": "logical",
         "mode": "and",
         "rules": [
@@ -715,6 +708,7 @@
     ],
     "final": "🔐 PROXY",
     "auto_detect_interface": true,
-    "default_mark": 23333
+    "default_mark": 23333,
+    "default_domain_resolver": "dns_direct"
   }
 }

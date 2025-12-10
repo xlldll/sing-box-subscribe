@@ -467,7 +467,7 @@ def parse_content(content):
 
         if node:
             # 默认为每个节点指定域名解析器
-            node["domain_resolver"] = "dns_direct"
+            # node["domain_resolver"] = "dns_direct"
             nodelist.append(node)
 
     return nodelist
