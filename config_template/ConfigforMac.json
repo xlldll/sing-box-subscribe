@@ -143,16 +143,16 @@
       "tag": "🔐 PROXY",
       "type": "selector",
       "outbounds": [
-        "🌍🇸🇬 SG",
-        "🌍🇹🇼 TW",
-        "🌍🇭🇰 HK",
-        "🌍🇯🇵 JP",
-        "🌍🇺🇸 US",
+        "🇸🇬 SG",
+        "🇹🇼 TW",
+        "🇭🇰 HK",
+        "🇯🇵 JP",
+        "🇺🇸 US",
         "👑 高级节点",
         "📉 省流节点",
-        "🆓 手动节点",
-        "🎯 全球直连",
-        "👊 所有节点"
+        "👊 所有节点",
+        "🌧️ 剩余节点",
+        "🎯 全球直连"
       ]
     },
     {
@@ -160,18 +160,35 @@
       "type": "selector",
       "outbounds": [
         "🔐 PROXY",
-        "🧐🇸🇬 HY2SG",
-        "🧐🇹🇼 HY2TW",
-        "🧐🇭🇰 HY2HK",
+        "🇸🇬 HY2SG",
+        "🇹🇼 HY2TW",
+        "🇭🇰 HY2HK",
         "👑 高级节点",
         "📉 省流节点",
-        "🆓 手动节点",
-        "🎯 全球直连",
-        "👊 所有节点"
+        "👊 所有节点",
+        "🌧️ 剩余节点",
+        "🎯 全球直连"
       ]
     },
     {
-      "tag": "🆓 手动节点",
+      "tag": "👊 所有节点",
+      "type": "selector",
+      "outbounds": [
+        "{all}",
+        "REJECT"
+      ],
+      "filter": [
+        {
+          "action": "exclude",
+          "keywords": [
+            "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "0\\.[1-5]|低倍率|省流|大流量|下载|限速"
+          ]
+        }
+      ]
+    },
+    {
+      "tag": "🌧️ 剩余节点",
       "type": "selector",
       "outbounds": [
         "{all}",
@@ -197,24 +214,7 @@
       ]
     },
     {
-      "tag": "👊 所有节点",
-      "type": "selector",
-      "outbounds": [
-        "{all}",
-        "REJECT"
-      ],
-      "filter": [
-        {
-          "action": "exclude",
-          "keywords": [
-            "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
-            "0\\.[1-5]|低倍率|省流|大流量|下载|限速"
-          ]
-        }
-      ]
-    },
-    {
-      "tag": "🌍🇸🇬 SG",
+      "tag": "🇸🇬 SG",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
       "interval": "15s",
@@ -249,7 +249,7 @@
       ]
     },
     {
-      "tag": "🌍🇹🇼 TW",
+      "tag": "🇹🇼 TW",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
       "interval": "15s",
@@ -284,7 +284,7 @@
       ]
     },
     {
-      "tag": "🌍🇭🇰 HK",
+      "tag": "🇭🇰 HK",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
       "interval": "15s",
@@ -319,7 +319,7 @@
       ]
     },
     {
-      "tag": "🌍🇯🇵 JP",
+      "tag": "🇯🇵 JP",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
       "interval": "15s",
@@ -354,7 +354,7 @@
       ]
     },
     {
-      "tag": "🌍🇺🇸 US",
+      "tag": "🇺🇸 US",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
       "interval": "15s",
@@ -389,7 +389,7 @@
       ]
     },
     {
-      "tag": "🧐🇹🇼 HY2TW",
+      "tag": "🇹🇼 HY2TW",
       "type": "urltest",
       "url": "http://1.1.1.1/cdn-cgi/trace",
       "interval": "15s",
@@ -419,7 +419,7 @@
       ]
     },
     {
-      "tag": "🧐🇸🇬 HY2SG",
+      "tag": "🇸🇬 HY2SG",
       "type": "urltest",
       "url": "http://1.1.1.1/cdn-cgi/trace",
       "interval": "15s",
@@ -449,7 +449,7 @@
       ]
     },
     {
-      "tag": "🧐🇭🇰 HY2HK",
+      "tag": "🇭🇰 HY2HK",
       "type": "urltest",
       "url": "http://1.1.1.1/cdn-cgi/trace",
       "interval": "15s",
@@ -578,42 +578,6 @@
         "action": "hijack-dns"
       },
       {
-        "domain_suffix": [
-          "cn2gias.uk",
-          "emby.moe"
-        ],
-        "outbound": "🧐 HY2"
-      },
-      {
-        "domain_suffix": [
-          "theepochtimes.com",
-          "epochtimes.com",
-          "pincong.rocks",
-          "rfa.org",
-          "rfi.fr",
-          "voanews.com",
-          "voachinese.com",
-          "hongkongfp.com",
-          "chinadigitaltimes.net",
-          "chinadigitaltimes.com",
-          "ntdtv.com",
-          "ntd.com",
-          "bbc.com",
-          "nytimes.com",
-          "reuters.com",
-          "theguardian.com",
-          "abc.net.au",
-          "wsj.com",
-          "ft.com",
-          "bbc.co.uk",
-          "hkfp.com",
-          "hkfp.net",
-          "visiontimes.com",
-          "secretchina.com"
-        ],
-        "outbound": "👊 所有节点"
-      },
-      {
         "ip_is_private": true,
         "outbound": "🎯 全球直连"
       },
@@ -622,6 +586,13 @@
           "cnip"
         ],
         "outbound": "🎯 全球直连"
+      },
+      {
+        "domain_suffix": [
+          "cn2gias.uk",
+          "emby.moe"
+        ],
+        "outbound": "🧐 HY2"
       },
       {
         "type": "logical",
@@ -687,6 +658,35 @@
           }
         ],
         "outbound": "🧐 HY2"
+      },
+      {
+        "domain_suffix": [
+          "theepochtimes.com",
+          "epochtimes.com",
+          "pincong.rocks",
+          "rfa.org",
+          "rfi.fr",
+          "voanews.com",
+          "voachinese.com",
+          "hongkongfp.com",
+          "chinadigitaltimes.net",
+          "chinadigitaltimes.com",
+          "ntdtv.com",
+          "ntd.com",
+          "bbc.com",
+          "nytimes.com",
+          "reuters.com",
+          "theguardian.com",
+          "abc.net.au",
+          "wsj.com",
+          "ft.com",
+          "bbc.co.uk",
+          "hkfp.com",
+          "hkfp.net",
+          "visiontimes.com",
+          "secretchina.com"
+        ],
+        "outbound": "👊 所有节点"
       }
     ],
     "rule_set": [
