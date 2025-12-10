@@ -57,6 +57,12 @@
         ]
       },
       {
+        "domain_keyword": [
+          "ottiptv"
+        ],
+        "server": "dns_direct"
+      },
+      {
         "rule_set": [
           "cn",
           "games-cn"
@@ -582,8 +588,8 @@
         "outbound": "🎯 全球直连"
       },
       {
-        "rule_set": [
-          "cnip"
+        "domain_keyword": [
+          "ottiptv"
         ],
         "outbound": "🎯 全球直连"
       },
@@ -687,6 +693,12 @@
           "secretchina.com"
         ],
         "outbound": "👊 所有节点"
+      },
+      {
+        "rule_set": [
+          "cnip"
+        ],
+        "outbound": "🎯 全球直连"
       }
     ],
     "rule_set": [

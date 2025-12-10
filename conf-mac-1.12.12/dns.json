@@ -41,6 +41,10 @@
         "answer": ["blocked.local. IN A 192.168.99.99"]
       },
       {
+        "domain_keyword": ["ottiptv"],
+        "server": "dns_direct"
+      },
+      {
         "rule_set": ["cn", "games-cn"],
         "server": "dns_direct"
       },
