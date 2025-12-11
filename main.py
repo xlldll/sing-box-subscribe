@@ -439,20 +439,53 @@ def parse_content(content):
     """
     将多行节点分享链接文本解析为节点列表。
 
+    输入允许：
+        - str  : 多行订阅文本
+        - bytes: 会尝试按 utf-8 解码
+        - list/tuple: 视为“每个元素一行”，自动 join
+        - None: 直接返回 []
+
     每一行：
         - 去除首尾空白
         - 根据协议选择对应解析器（get_parser）
         - 解析失败则跳过该行
-        - 解析成功则为节点附加默认的 domain_resolver = "dns_direct"
 
     返回：
         list[dict]: 解析得到的节点列表。
     """
-    nodelist = []
     print("parse_content")
-    for t in content.splitlines():
-        t = t.strip()
-        if len(t) == 0:
+
+    # 1. content 为 None，直接返回空列表，避免 'NoneType' 错误
+    if content is None:
+        print("[WARN] parse_content() 收到 content=None，返回空列表。")
+        return []
+
+    # 2. 如果是 bytes，尝试解码为 str
+    if isinstance(content, bytes):
+        try:
+            content = content.decode("utf-8", errors="ignore")
+        except Exception as e:
+            print(f"[WARN] parse_content() 解码 bytes 失败: {e}")
+            return []
+
+    # 3. 如果是 list / tuple，当成“每个元素一行”
+    if isinstance(content, (list, tuple)):
+        try:
+            content = "\n".join(str(x) for x in content)
+        except Exception as e:
+            print(f"[WARN] parse_content() 将 list/tuple 转为字符串失败: {e}")
+            return []
+
+    # 4. 如果还不是 str，放弃解析
+    if not isinstance(content, str):
+        print(f"[WARN] parse_content() 期望 str，但收到 {type(content)}，返回空列表。")
+        return []
+
+    # ===== 正常解析逻辑 =====
+    nodelist = []
+    for line in content.splitlines():
+        t = line.strip()
+        if not t:
             continue
 
         factory = get_parser(t)
@@ -461,17 +494,16 @@ def parse_content(content):
 
         try:
             node = factory(t)
-        except Exception:
-            # 单个节点解析失败，忽略该行
+        except Exception as e:
+            print(f"[WARN] 单行解析失败，已跳过: {t[:60]!r}...  错误: {e}")
             node = None
 
         if node:
-            # 默认为每个节点指定域名解析器
+            # 如果你想默认给每个节点加 domain_resolver，可以在这里打开
             # node["domain_resolver"] = "dns_direct"
             nodelist.append(node)
 
     return nodelist
-
 
 def get_parser(node):
     """
