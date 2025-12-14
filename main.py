@@ -421,7 +421,6 @@ def get_nodes(url):
                 if outbound.get("type") not in excluded_types
             ]
             outbounds.extend(filtered_outbounds)
-            print(outbounds)
             return outbounds
 
     # content 为纯文本：按通用节点分享链接格式解析

@@ -1,32 +1,75 @@
-import tool,json,re,urllib,sys
+import re
 from urllib.parse import urlparse, parse_qs, unquote
+
 def parse(data):
-    info = data[:]
-    server_info = urlparse(info)
-    _netloc = server_info.netloc.split("@")
-    #_netloc = (tool.b64Decode(server_info.netloc)).decode().split("@")
-    netquery = dict(
-        (k, v if len(v) > 1 else v[0])
-        for k, v in parse_qs(server_info.query).items()
-    )
+    info = data.strip()
+    u = urlparse(info)
+
+    # Query params (parse_qs gives list values)
+    q = parse_qs(u.query)
+    def qget(key, default=None):
+        v = q.get(key)
+        if v is None:
+            return default
+        return v[-1]  # take last if multiple
+
+    # netloc format: "<userinfo>@<host>:<port>"
+    if "@" not in u.netloc:
+        raise ValueError(f"Invalid TUIC URL netloc (missing @): {u.netloc!r}")
+
+    userinfo_raw, hostport = u.netloc.split("@", 1)
+
+    # IMPORTANT: userinfo can be url-escaped, e.g. %3A for ':'
+    userinfo = unquote(userinfo_raw)
+
+    # userinfo is usually "uuid:password" (password can be empty/missing)
+    if ":" in userinfo:
+        uuid, password = userinfo.split(":", 1)  # split once
+    else:
+        uuid, password = userinfo, qget("password", "")
+
+    uuid = uuid.strip()
+    password = (password or "").strip()
+
+    # host may be IPv6 in brackets [::1]
+    host = re.sub(r"^\[|\]$", "", hostport.rsplit(":", 1)[0])
+    port = int(hostport.rsplit(":", 1)[1])
+
+    # ALPN: could be "h3,h2,http/1.1"
+    alpn_raw = qget("alpn", "h3")
+    # allow someone to pass "{h3,h2}" etc.
+    alpn = [x.strip() for x in str(alpn_raw).strip("{}").split(",") if x.strip()]
+
     node = {
-        'tag': server_info.fragment or tool.genName()+'_tuic',
-        'type': 'tuic',
-        'server': re.sub(r"\[|\]", "", _netloc[1].rsplit(":", 1)[0]),
-        'server_port': int(_netloc[1].rsplit(":", 1)[1]),
-        'uuid': _netloc[0].split(":")[0],
-        'password': _netloc[0].split(":")[1] if len(_netloc[0].split(":")) > 1 else netquery.get('password', ''),
-        'congestion_control': netquery.get('congestion_control', 'bbr'),
-        'udp_relay_mode': netquery.get('udp_relay_mode'),
-        'zero_rtt_handshake': False,
-        'heartbeat': '10s',
-        'tls': {
-            'enabled': True,
-            'alpn': (netquery.get('alpn') or "h3").strip('{}').split(',')
-        }
+        "tag": unquote(u.fragment) if u.fragment else "tuic",
+        "type": "tuic",
+        "server": host,
+        "server_port": port,
+        "uuid": uuid,
+        "password": password,
+        "congestion_control": qget("congestion_control", "bbr"),
+        # omit udp_relay_mode if not provided (avoid null issues)
+        "zero_rtt_handshake": False,
+        "heartbeat": "10s",
+        "tls": {
+            "enabled": True,
+            "alpn": alpn,
+        },
     }
-    if netquery.get('allow_insecure') and netquery['allow_insecure'] == '1' :
-        node['tls']['insecure'] = True
-    if netquery.get('disable_sni') and netquery['disable_sni'] != '1':
-        node['tls']['server_name'] = netquery.get('sni')
+
+    # SNI
+    sni = qget("sni")
+    disable_sni = qget("disable_sni", "0")
+    if sni and str(disable_sni) != "1":
+        node["tls"]["server_name"] = sni
+
+    # allow_insecure=1
+    if qget("allow_insecure") == "1":
+        node["tls"]["insecure"] = True
+
+    # udp_relay_mode if present
+    udp_mode = qget("udp_relay_mode")
+    if udp_mode:
+        node["udp_relay_mode"] = udp_mode
+
     return node

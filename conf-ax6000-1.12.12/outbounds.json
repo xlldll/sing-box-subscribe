@@ -47,7 +47,11 @@
     },
     {
       "tag": "🌧️ 剩余节点",
-      "type": "selector",
+      "type": "urltest",
+      "url": "https://www.google.com/generate_204",
+      "interval": "15s",
+      "idle_timeout": "3m",
+      "tolerance": 80,
       "outbounds": ["{all}", "REJECT"],
       "filter": [
         {
