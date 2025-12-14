@@ -2,6 +2,6 @@ requests>=2.31.0
 paramiko
 scp
 chardet
-PyYAML
+pyyaml
 ruamel.yaml
 Flask==2.3.2
