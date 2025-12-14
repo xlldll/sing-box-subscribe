@@ -4,4 +4,4 @@ scp
 chardet
 pyyaml
 ruamel.yaml
-Flask==2.3.2
+flask==2.3.2
