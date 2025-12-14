@@ -2,8 +2,8 @@ from http.server import BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 import json
 import os
-
 from main import generate_config_from_providers  # 使用 main.py 中的封装函数
+
 """
 接下来你要做的操作（一步步）：
 1）在 Vercel 项目里设置环境变量：
