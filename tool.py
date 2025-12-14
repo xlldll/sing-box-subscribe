@@ -1,4 +1,4 @@
-import urllib.parse,base64,requests,paramiko,random,string,re,chardet
+import base64,requests,paramiko,random,string,re,chardet
 from paramiko import SSHClient
 from scp import SCPClient
 
