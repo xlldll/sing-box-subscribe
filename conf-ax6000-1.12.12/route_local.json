@@ -1,0 +1,95 @@
+{
+  "route": {
+    "rules": [
+      {
+        "action": "sniff"
+      },
+      {
+        "type": "logical",
+        "mode": "or",
+        "rules": [
+          {
+            "port": 53
+          },
+          { "protocol": ["dns"] }
+        ],
+        "action": "hijack-dns"
+      },
+      {
+        "ip_is_private": true,
+        "outbound": "🎯 全球直连"
+      },
+      {
+        "domain_keyword": ["ottiptv"],
+        "outbound": "🎯 全球直连"
+      },
+      {
+        "domain_suffix": ["cn2gias.uk", "emby.moe"],
+        "outbound": "🧐 HY2"
+      },
+      {
+        "domain_suffix": [
+          "theepochtimes.com",
+          "epochtimes.com",
+          "pincong.rocks",
+          "rfa.org",
+          "rfi.fr",
+          "voanews.com",
+          "voachinese.com",
+          "hongkongfp.com",
+          "chinadigitaltimes.net",
+          "chinadigitaltimes.com",
+          "ntdtv.com",
+          "ntd.com",
+          "bbc.com",
+          "nytimes.com",
+          "reuters.com",
+          "theguardian.com",
+          "abc.net.au",
+          "wsj.com",
+          "ft.com",
+          "bbc.co.uk",
+          "hkfp.com",
+          "hkfp.net",
+          "visiontimes.com",
+          "secretchina.com"
+        ],
+        "outbound": "👊 所有节点"
+      },
+      {
+        "rule_set": ["cnip"],
+        "outbound": "🎯 全球直连"
+      }
+    ],
+    "rule_set": [
+      {
+        "tag": "ads",
+        "format": "binary",
+        "type": "local",
+        "path": "/etc/sing-box/rules/ads.srs"
+      },
+      {
+        "tag": "cnip",
+        "format": "binary",
+        "type": "local",
+        "path": "/etc/sing-box/rules/cnip.srs"
+      },
+      {
+        "tag": "cn",
+        "format": "binary",
+        "type": "local",
+        "path": "/etc/sing-box/rules/cn.srs"
+      },
+      {
+        "tag": "games-cn",
+        "format": "binary",
+        "type": "local",
+        "path": "/etc/sing-box/rules/games-cn.srs"
+      }
+    ],
+    "final": "🔐 PROXY",
+    "auto_detect_interface": true,
+    "default_mark": 23333,
+    "default_domain_resolver": "dns_direct"
+  }
+}
