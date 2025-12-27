@@ -18,3 +18,7 @@ providers_mac.json
 .gitignore
 providers_route.json
 providers_none.json
+providers_mac.txt
+providers_route.txt
+config.txt
+providers_none.txt
