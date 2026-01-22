@@ -33,6 +33,12 @@
           "match_domain": []
         }
       }
+    },
+    {
+      "type": "socks",
+      "tag": "local_socks",
+      "listen": "127.0.0.1",
+      "listen_port": 1080
     }
   ]
 }
