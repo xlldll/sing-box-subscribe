@@ -9,17 +9,8 @@
     "servers": [
       {
         "tag": "dns_direct",
-        "type": "https",
+        "type": "tcp",
         "server": "223.5.5.5",
-        "path": "/dns-query",
-        "tls": {
-          "enabled": true,
-          "server_name": "223.5.5.5",
-          "insecure": false,
-          "alpn": [
-            "h2"
-          ]
-        },
         "detour": "🎯 全球直连"
       },
       {
@@ -142,6 +133,12 @@
           "match_domain": []
         }
       }
+    },
+    {
+      "type": "socks",
+      "tag": "local_socks",
+      "listen": "127.0.0.1",
+      "listen_port": 1080
     }
   ],
   "outbounds": [
