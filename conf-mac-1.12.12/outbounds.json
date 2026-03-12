@@ -71,7 +71,7 @@
       "tag": "🇸🇬 SG",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
-      "interval": "20s",
+      "interval": "15s",
       "idle_timeout": "3m",
       "tolerance": 50,
       "outbounds": ["{all}", "REJECT"],
