@@ -1,32 +1,12 @@
 {
   "subscribes": [
     {
-      "tag": "Fn",
-      "url": "",
-      "enabled": true,
-      "emoji": 0,
-      "subgroup": "",
-      "prefix": "🐦 FN-",
-      "User-Agent": "clashmeta",
-      "ex-node-name": "故障,网址,重置,到期,自动,剩余,手动,文档,官网,群,防,时间"
-    },
-    {
       "tag": "LMY",
       "url": "",
       "enabled": true,
       "emoji": 0,
       "subgroup": "",
       "prefix": "🐱 LM-",
-      "User-Agent": "clashmeta",
-      "ex-node-name": "故障,网址,重置,到期,自动,剩余,手动,文档,官网,群,防,时间"
-    },
-    {
-      "tag": "Fast",
-      "url": "",
-      "enabled": true,
-      "emoji": 0,
-      "subgroup": "",
-      "prefix": "💨 Fast-",
       "User-Agent": "clashmeta",
       "ex-node-name": "故障,网址,重置,到期,自动,剩余,手动,文档,官网,群,防,时间"
     }

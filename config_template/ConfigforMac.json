@@ -22,48 +22,33 @@
           "enabled": true,
           "server_name": "dns.google",
           "insecure": false,
-          "alpn": [
-            "h2"
-          ]
+          "alpn": ["h2"]
         },
         "detour": "🔐 PROXY"
       }
     ],
     "rules": [
       {
-        "query_type": [
-          "AAAA"
-        ],
+        "query_type": ["AAAA"],
         "action": "reject",
         "no_drop": true
       },
       {
-        "rule_set": [
-          "ads"
-        ],
+        "rule_set": ["ads"],
         "action": "predefined",
         "rcode": "NOERROR",
-        "answer": [
-          "blocked.local. IN A 192.168.99.99"
-        ]
+        "answer": ["blocked.local. IN A 192.168.99.99"]
       },
       {
-        "domain_keyword": [
-          "ottiptv"
-        ],
+        "domain_keyword": ["ottiptv"],
         "server": "dns_direct"
       },
       {
-        "rule_set": [
-          "cn",
-          "games-cn"
-        ],
+        "rule_set": ["cn", "games-cn"],
         "server": "dns_direct"
       },
       {
-        "rule_set": [
-          "cnip"
-        ],
+        "rule_set": ["cnip"],
         "server": "dns_direct"
       },
       {
@@ -113,9 +98,7 @@
       "tag": "tun-in",
       "stack": "system",
       "mtu": 9000,
-      "address": [
-        "172.19.0.1/30"
-      ],
+      "address": ["172.19.0.1/30"],
       "auto_route": true,
       "strict_route": false,
       "route_exclude_address": [
@@ -176,10 +159,7 @@
     {
       "tag": "👊 所有节点",
       "type": "selector",
-      "outbounds": [
-        "{all}",
-        "REJECT"
-      ],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         {
           "action": "exclude",
@@ -194,22 +174,14 @@
       "tag": "🌧️ 剩余节点",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
-      "interval": "15s",
+      "interval": "10s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": [
-        "{all}",
-        "REJECT"
-      ],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         {
           "action": "exclude",
-          "type": [
-            "trojan",
-            "vless",
-            "hysteria2",
-            "shadowsocks"
-          ]
+          "type": ["trojan", "vless", "hysteria2", "shadowsocks"]
         },
         {
           "action": "exclude",
@@ -224,27 +196,18 @@
       "tag": "🇸🇬 SG",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
-      "interval": "15s",
+      "interval": "20s",
       "idle_timeout": "3m",
-      "tolerance": 80,
-      "outbounds": [
-        "{all}",
-        "REJECT"
-      ],
+      "tolerance": 50,
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         {
           "action": "include",
-          "keywords": [
-            "(?i)(🇸🇬|新加坡|sg|singapore)"
-          ]
+          "keywords": ["(?i)(🇸🇬|新加坡|sg|singapore)"]
         },
         {
           "action": "include",
-          "type": [
-            "trojan",
-            "vless",
-            "shadowsocks"
-          ]
+          "type": ["trojan", "vless", "shadowsocks"]
         },
         {
           "action": "exclude",
@@ -259,27 +222,18 @@
       "tag": "🇹🇼 TW",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
-      "interval": "15s",
+      "interval": "10s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": [
-        "{all}",
-        "REJECT"
-      ],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         {
           "action": "include",
-          "keywords": [
-            "🇹🇼|TW|tw|台湾|臺灣|台|Taiwan"
-          ]
+          "keywords": ["🇹🇼|TW|tw|台湾|臺灣|台|Taiwan"]
         },
         {
           "action": "include",
-          "type": [
-            "trojan",
-            "vless",
-            "shadowsocks"
-          ]
+          "type": ["trojan", "vless", "shadowsocks"]
         },
         {
           "action": "exclude",
@@ -294,27 +248,18 @@
       "tag": "🇭🇰 HK",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
-      "interval": "15s",
+      "interval": "10s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": [
-        "{all}",
-        "REJECT"
-      ],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         {
           "action": "include",
-          "keywords": [
-            "(?i)(🇭🇰|港|hk|hongkong|hong kong)"
-          ]
+          "keywords": ["(?i)(🇭🇰|港|hk|hongkong|hong kong)"]
         },
         {
           "action": "include",
-          "type": [
-            "trojan",
-            "vless",
-            "shadowsocks"
-          ]
+          "type": ["trojan", "vless", "shadowsocks"]
         },
         {
           "action": "exclude",
@@ -329,27 +274,18 @@
       "tag": "🇯🇵 JP",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
-      "interval": "15s",
+      "interval": "10s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": [
-        "{all}",
-        "REJECT"
-      ],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         {
           "action": "include",
-          "keywords": [
-            "(?i)(🇯🇵|JP|jp|日本|Japan)"
-          ]
+          "keywords": ["(?i)(🇯🇵|JP|jp|日本|Japan)"]
         },
         {
           "action": "include",
-          "type": [
-            "trojan",
-            "vless",
-            "shadowsocks"
-          ]
+          "type": ["trojan", "vless", "shadowsocks"]
         },
         {
           "action": "exclude",
@@ -364,27 +300,18 @@
       "tag": "🇺🇸 US",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
-      "interval": "15s",
+      "interval": "10s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": [
-        "{all}",
-        "REJECT"
-      ],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         {
           "action": "include",
-          "keywords": [
-            "(?i)(🇺🇸|US|us|美国|United States)"
-          ]
+          "keywords": ["(?i)(🇺🇸|US|us|美国|United States)"]
         },
         {
           "action": "include",
-          "type": [
-            "trojan",
-            "vless",
-            "shadowsocks"
-          ]
+          "type": ["trojan", "vless", "shadowsocks"]
         },
         {
           "action": "exclude",
@@ -399,13 +326,10 @@
       "tag": "🇹🇼 HY2TW",
       "type": "urltest",
       "url": "http://1.1.1.1/cdn-cgi/trace",
-      "interval": "15s",
+      "interval": "10s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": [
-        "{all}",
-        "REJECT"
-      ],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         {
           "action": "include",
@@ -413,15 +337,11 @@
         },
         {
           "action": "include",
-          "keywords": [
-            "🇹🇼|TW|tw|台湾|臺灣|台|Taiwan"
-          ]
+          "keywords": ["🇹🇼|TW|tw|台湾|臺灣|台|Taiwan"]
         },
         {
           "action": "include",
-          "type": [
-            "hysteria2"
-          ]
+          "type": ["hysteria2"]
         }
       ]
     },
@@ -429,13 +349,10 @@
       "tag": "🇸🇬 HY2SG",
       "type": "urltest",
       "url": "http://1.1.1.1/cdn-cgi/trace",
-      "interval": "15s",
+      "interval": "10s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": [
-        "{all}",
-        "REJECT"
-      ],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         {
           "action": "include",
@@ -443,15 +360,11 @@
         },
         {
           "action": "include",
-          "keywords": [
-            "(?i)(🇸🇬|新|sg|singapore)"
-          ]
+          "keywords": ["(?i)(🇸🇬|新|sg|singapore)"]
         },
         {
           "action": "include",
-          "type": [
-            "hysteria2"
-          ]
+          "type": ["hysteria2"]
         }
       ]
     },
@@ -459,13 +372,10 @@
       "tag": "🇭🇰 HY2HK",
       "type": "urltest",
       "url": "http://1.1.1.1/cdn-cgi/trace",
-      "interval": "15s",
+      "interval": "10s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": [
-        "{all}",
-        "REJECT"
-      ],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         {
           "action": "include",
@@ -473,15 +383,11 @@
         },
         {
           "action": "include",
-          "keywords": [
-            "(?i)(🇭🇰|港|hk|hongkong|hong kong)"
-          ]
+          "keywords": ["(?i)(🇭🇰|港|hk|hongkong|hong kong)"]
         },
         {
           "action": "include",
-          "type": [
-            "hysteria2"
-          ]
+          "type": ["hysteria2"]
         }
       ]
     },
@@ -489,13 +395,10 @@
       "tag": "👑 高级节点",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
-      "interval": "15s",
+      "interval": "10s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": [
-        "{all}",
-        "REJECT"
-      ],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         {
           "action": "include",
@@ -505,11 +408,7 @@
         },
         {
           "action": "exclude",
-          "keywords": [
-            "0\\.[1-5]|低倍率|省流|大流量|下载",
-            "限速",
-            "LM"
-          ]
+          "keywords": ["0\\.[1-5]|低倍率|省流|大流量|下载", "限速", "LM"]
         }
       ]
     },
@@ -517,19 +416,14 @@
       "tag": "📉 省流节点",
       "type": "urltest",
       "url": "https://www.google.com/generate_204",
-      "interval": "15s",
+      "interval": "10s",
       "idle_timeout": "3m",
       "tolerance": 80,
-      "outbounds": [
-        "{all}",
-        "REJECT"
-      ],
+      "outbounds": ["{all}", "REJECT"],
       "filter": [
         {
           "action": "include",
-          "keywords": [
-            "0\\.[1-5]|低倍率|省流|大流量|下载"
-          ]
+          "keywords": ["0\\.[1-5]|低倍率|省流|大流量|下载"]
         },
         {
           "action": "exclude",
@@ -544,16 +438,12 @@
     {
       "tag": "🎯 全球直连",
       "type": "selector",
-      "outbounds": [
-        "DIRECT"
-      ]
+      "outbounds": ["DIRECT"]
     },
     {
       "tag": "🔴 全球拦截",
       "type": "selector",
-      "outbounds": [
-        "REJECT"
-      ]
+      "outbounds": ["REJECT"]
     },
     {
       "tag": "DIRECT",
@@ -577,9 +467,7 @@
             "port": 53
           },
           {
-            "protocol": [
-              "dns"
-            ]
+            "protocol": ["dns"]
           }
         ],
         "action": "hijack-dns"
@@ -589,16 +477,11 @@
         "outbound": "🎯 全球直连"
       },
       {
-        "domain_keyword": [
-          "ottiptv"
-        ],
+        "domain_keyword": ["ottiptv"],
         "outbound": "🎯 全球直连"
       },
       {
-        "domain_suffix": [
-          "cn2gias.uk",
-          "emby.moe"
-        ],
+        "domain_suffix": ["cn2gias.uk", "emby.moe"],
         "outbound": "🧐 HY2"
       },
       {
@@ -631,9 +514,7 @@
         "outbound": "👊 所有节点"
       },
       {
-        "rule_set": [
-          "cnip"
-        ],
+        "rule_set": ["cnip"],
         "outbound": "🎯 全球直连"
       }
     ],

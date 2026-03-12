@@ -8,3 +8,7 @@
 
 - pip install -r requirements.txt
 - python -m http.server 9090
+
+- install dependency
+- python3 main.py
+- python3 gen_conf_all.py
