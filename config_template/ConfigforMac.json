@@ -146,6 +146,7 @@
       "tag": "🔐 PROXY",
       "type": "selector",
       "outbounds": [
+        "🧐 HY2",
         "🇸🇬 SG",
         "🇹🇼 TW",
         "🇭🇰 HK",
@@ -162,7 +163,6 @@
       "tag": "🧐 HY2",
       "type": "selector",
       "outbounds": [
-        "🔐 PROXY",
         "🇸🇬 HY2SG",
         "🇹🇼 HY2TW",
         "🇭🇰 HY2HK",
@@ -184,8 +184,8 @@
         {
           "action": "exclude",
           "keywords": [
-            "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
-            "0\\.[1-5]|低倍率|省流|大流量|下载|限速"
+            "(?i)(专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "低倍率|省流|大流量|下载|限速"
           ]
         }
       ]
@@ -214,8 +214,8 @@
         {
           "action": "exclude",
           "keywords": [
-            "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
-            "0\\.[1-5]|低倍率|省流|大流量|下载|限速"
+            "(?i)(专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "低倍率|省流|大流量|下载|限速"
           ]
         }
       ]
@@ -243,14 +243,15 @@
           "type": [
             "trojan",
             "vless",
-            "shadowsocks"
+            "shadowsocks",
+            "anytls"
           ]
         },
         {
           "action": "exclude",
           "keywords": [
-            "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
-            "0\\.[1-5]|低倍率|省流|大流量|下载|限速"
+            "(?i)(专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "低倍率|省流|大流量|下载|限速"
           ]
         }
       ]
@@ -278,14 +279,15 @@
           "type": [
             "trojan",
             "vless",
-            "shadowsocks"
+            "shadowsocks",
+            "anytls"
           ]
         },
         {
           "action": "exclude",
           "keywords": [
-            "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
-            "0\\.[1-5]|低倍率|省流|大流量|下载|限速"
+            "(?i)(专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "低倍率|省流|大流量|下载|限速"
           ]
         }
       ]
@@ -313,14 +315,15 @@
           "type": [
             "trojan",
             "vless",
-            "shadowsocks"
+            "shadowsocks",
+            "anytls"
           ]
         },
         {
           "action": "exclude",
           "keywords": [
-            "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
-            "0\\.[1-5]|低倍率|省流|大流量|下载|限速"
+            "(?i)(专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "低倍率|省流|大流量|下载|限速"
           ]
         }
       ]
@@ -348,14 +351,15 @@
           "type": [
             "trojan",
             "vless",
-            "shadowsocks"
+            "shadowsocks",
+            "anytls"
           ]
         },
         {
           "action": "exclude",
           "keywords": [
-            "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
-            "0\\.[1-5]|低倍率|省流|大流量|下载|限速"
+            "(?i)(专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "低倍率|省流|大流量|下载|限速"
           ]
         }
       ]
@@ -383,14 +387,15 @@
           "type": [
             "trojan",
             "vless",
-            "shadowsocks"
+            "shadowsocks",
+            "anytls"
           ]
         },
         {
           "action": "exclude",
           "keywords": [
-            "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
-            "0\\.[1-5]|低倍率|省流|大流量|下载|限速"
+            "(?i)(专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "低倍率|省流|大流量|下载|限速"
           ]
         }
       ]
@@ -398,7 +403,7 @@
     {
       "tag": "🇹🇼 HY2TW",
       "type": "urltest",
-      "url": "http://1.1.1.1/cdn-cgi/trace",
+      "url": "https://www.google.com/generate_204",
       "interval": "10s",
       "idle_timeout": "3m",
       "tolerance": 80,
@@ -407,10 +412,6 @@
         "REJECT"
       ],
       "filter": [
-        {
-          "action": "include",
-          "server_regex": "^(?:\\d{1,3}\\.){3}\\d{1,3}$"
-        },
         {
           "action": "include",
           "keywords": [
@@ -420,7 +421,7 @@
         {
           "action": "include",
           "type": [
-            "hysteria2"
+            "anytls"
           ]
         }
       ]
@@ -428,7 +429,7 @@
     {
       "tag": "🇸🇬 HY2SG",
       "type": "urltest",
-      "url": "http://1.1.1.1/cdn-cgi/trace",
+      "url": "https://www.google.com/generate_204",
       "interval": "10s",
       "idle_timeout": "3m",
       "tolerance": 80,
@@ -437,10 +438,6 @@
         "REJECT"
       ],
       "filter": [
-        {
-          "action": "include",
-          "server_regex": "^(?:\\d{1,3}\\.){3}\\d{1,3}$"
-        },
         {
           "action": "include",
           "keywords": [
@@ -450,7 +447,7 @@
         {
           "action": "include",
           "type": [
-            "hysteria2"
+            "anytls"
           ]
         }
       ]
@@ -458,7 +455,7 @@
     {
       "tag": "🇭🇰 HY2HK",
       "type": "urltest",
-      "url": "http://1.1.1.1/cdn-cgi/trace",
+      "url": "https://www.google.com/generate_204",
       "interval": "10s",
       "idle_timeout": "3m",
       "tolerance": 80,
@@ -469,10 +466,6 @@
       "filter": [
         {
           "action": "include",
-          "server_regex": "^(?:\\d{1,3}\\.){3}\\d{1,3}$"
-        },
-        {
-          "action": "include",
           "keywords": [
             "(?i)(🇭🇰|港|hk|hongkong|hong kong)"
           ]
@@ -480,7 +473,7 @@
         {
           "action": "include",
           "type": [
-            "hysteria2"
+            "anytls"
           ]
         }
       ]
@@ -500,13 +493,13 @@
         {
           "action": "include",
           "keywords": [
-            "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)"
+            "(?i)(专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)"
           ]
         },
         {
           "action": "exclude",
           "keywords": [
-            "0\\.[1-5]|低倍率|省流|大流量|下载",
+            "低倍率|省流|大流量|下载",
             "限速",
             "LM"
           ]
@@ -528,13 +521,13 @@
         {
           "action": "include",
           "keywords": [
-            "0\\.[1-5]|低倍率|省流|大流量|下载"
+            "低倍率|省流|大流量|下载"
           ]
         },
         {
           "action": "exclude",
           "keywords": [
-            "(?i)(专线|专用|高级|直连|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "(?i)(专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
             "限速",
             "LM"
           ]

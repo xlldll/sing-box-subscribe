@@ -108,6 +108,7 @@ def process_subscribes(subscribes):
             continue
 
         _nodes = get_nodes(subscribe['url'])
+        
         if _nodes and len(_nodes) > 0:
             add_prefix(_nodes, subscribe)
             add_emoji(_nodes, subscribe)
@@ -365,74 +366,190 @@ def get_nodes(url):
     返回：
         list[dict]: 节点字典列表。
     """
-    if url.startswith('sub://'):
-        # 处理 sub:// 包裹的订阅地址（内部为 base64）
-        url = tool.b64Decode(url[6:]).decode('utf-8')
 
-    urlstr = urlparse(url)
-    if not urlstr.scheme:
-        # 无 scheme：先尝试按 base64 解码为纯文本节点链接
+    def flatten_nodes(data):
+        """
+        展开 shadowtls 等返回 tuple 的节点结构，统一输出 list[dict]
+        """
+        processed_list = []
+        for item in data or []:
+            if isinstance(item, tuple):
+                processed_list.extend([x for x in item if x])
+            elif item:
+                processed_list.append(item)
+        return processed_list
+
+    def parse_text_nodes(text):
+        """
+        解析纯文本节点订阅
+        """
+        if text is None:
+            print("[WARN] parse_text_nodes() 收到 None，返回空列表")
+            return []
+
+        if isinstance(text, bytes):
+            try:
+                text = text.decode("utf-8", errors="ignore")
+            except Exception as e:
+                print(f"[WARN] parse_text_nodes() bytes 解码失败: {e}")
+                return []
+
+        if not isinstance(text, str):
+            print(f"[WARN] parse_text_nodes() 期望 str，但收到 {type(text)}")
+            return []
+
+        print(f"[DEBUG] parse_text_nodes() 文本长度 = {len(text)}")
+        data = parse_content(text)
+        return flatten_nodes(data)
+
+    def parse_clash_config(cfg):
+        """
+        解析 Clash 配置中的 proxies
+        """
+        proxies = cfg.get("proxies", [])
+        proxy_groups = cfg.get("proxy-groups", [])
+
+        print(f"[DEBUG] Clash YAML keys = {list(cfg.keys())}")
+        print(f"[DEBUG] proxies type = {type(proxies)}")
+        print(f"[DEBUG] proxies count = {len(proxies)}")
+        print(f"[DEBUG] proxy-groups count = {len(proxy_groups)}")
+
+        if not proxies:
+            if proxy_groups:
+                print("[WARN] Clash 配置解析成功，但 proxies 为空，只有 proxy-groups，没有真实节点。")
+            else:
+                print("[WARN] Clash 配置解析成功，但 proxies 为空。")
+            return []
+
+        print("get_nodes——从 proxies 中转换为通用链接，再统一解析")
+        share_links = []
+
+        for idx, proxy in enumerate(proxies, 1):
+            try:
+                link = clash2v2ray(proxy)
+                if link:
+                    share_links.append(link)
+                else:
+                    print(f"[WARN] 第 {idx} 个 proxy 转换结果为空，已跳过: {proxy}")
+            except Exception as e:
+                print(f"[WARN] 第 {idx} 个 proxy 转换失败，已跳过: {e} | proxy={proxy}")
+
+        if not share_links:
+            print("[WARN] Clash proxies 存在，但全部转换失败，返回空列表。")
+            return []
+
+        text = "\n".join(share_links)
+        return parse_text_nodes(text)
+
+    def parse_singbox_config(cfg):
+        """
+        解析 sing-box 配置中的真实 outbounds
+        """
+        print("get_nodes——sing-box 配置")
+
+        outbounds = cfg.get("outbounds", [])
+        if not isinstance(outbounds, list):
+            print(f"[WARN] sing-box outbounds 不是 list，而是 {type(outbounds)}")
+            return []
+
+        excluded_types = {"selector", "urltest", "direct", "block", "dns"}
+        filtered_outbounds = []
+
+        for outbound in outbounds:
+            if not isinstance(outbound, dict):
+                print(f"[WARN] 跳过非 dict outbound: {outbound}")
+                continue
+
+            otype = outbound.get("type")
+            if otype in excluded_types:
+                continue
+
+            filtered_outbounds.append(outbound)
+
+        print(f"[DEBUG] sing-box outbounds 总数 = {len(outbounds)}")
+        print(f"[DEBUG] sing-box 真实节点数 = {len(filtered_outbounds)}")
+
+        return filtered_outbounds
+
+    print("[DEBUG] ===== get_nodes() start =====")
+    print(f"[DEBUG] 原始 url = {url}")
+
+    if not url:
+        print("[WARN] get_nodes() 收到空 url，返回空列表。")
+        print("[DEBUG] ===== get_nodes() end =====")
+        return []
+
+    # 1) 处理 sub:// 包裹的真实订阅
+    if isinstance(url, str) and url.startswith("sub://"):
+        print("[DEBUG] 检测到 sub:// 链接，准备 base64 解码得到真实 URL")
         try:
-            content = tool.b64Decode(url).decode('utf-8')
-            data = parse_content(content)
+            url = tool.b64Decode(url[6:]).decode("utf-8")
+            print(f"[DEBUG] sub:// 解码后真实 URL = {url}")
+        except Exception as e:
+            print(f"[WARN] sub:// 解码失败: {e}")
+            print("[DEBUG] ===== get_nodes() end =====")
+            return []
 
-            # 展开 shadowtls 等返回为 tuple 的节点结构
-            processed_list = []
-            for item in data:
-                if isinstance(item, tuple):
-                    processed_list.extend([item[0], item[1]])
-                else:
-                    processed_list.append(item)
-            return processed_list
-        except:
-            # base64 解码失败，则当作本地文件路径处理
-            content = get_content_form_file(url)
+    # 2) 判断是 URL、本地文件、还是纯 base64 文本
+    urlstr = urlparse(url)
+    print(f"get_nodes——urlstr::::{urlstr}")
+
+    content = None
+
+    if not urlstr.scheme:
+        print("[DEBUG] 未检测到 URL scheme，先尝试按 base64 文本订阅解析")
+        try:
+            decoded = tool.b64Decode(url).decode("utf-8")
+            print(f"[DEBUG] base64 解码成功，长度 = {len(decoded)}")
+            result = parse_text_nodes(decoded)
+            print(f"[DEBUG] base64 文本订阅解析结果数量 = {len(result)}")
+            print("[DEBUG] ===== get_nodes() end =====")
+            return result
+        except Exception as e:
+            print(f"[DEBUG] base64 解码失败，按本地文件处理: {e}")
+            try:
+                content = get_content_form_file(url)
+                print(f"[DEBUG] 本地文件读取成功，类型 = {type(content)}")
+            except Exception as e2:
+                print(f"[WARN] 本地文件读取失败: {e2}")
+                print("[DEBUG] ===== get_nodes() end =====")
+                return []
     else:
-        # 有 scheme：按远程 URL 处理
-        content = get_content_from_url(url)
+        print("[DEBUG] 检测到 URL scheme，按远程订阅处理")
+        try:
+            content = get_content_from_url(url)
+            print(f"[DEBUG] 远程内容获取成功，类型 = {type(content)}")
+        except Exception as e:
+            print(f"[WARN] 远程订阅获取失败: {e}")
+            print("[DEBUG] ===== get_nodes() end =====")
+            return []
 
-    # content 为 dict：可能是 Clash 或 sing-box 配置
+    print(f"get_nodes——content::::{content}")
+
+    # 3) dict: 可能是 Clash / sing-box
     if isinstance(content, dict):
-        # Clash 配置：从 proxies 中转换为通用链接，再统一解析
-        if 'proxies' in content:
-            share_links = []
-            for proxy in content['proxies']:
-                share_links.append(clash2v2ray(proxy))
-            data = '\n'.join(share_links)
-            data = parse_content(data)
+        if "proxies" in content:
+            result = parse_clash_config(content)
+            print(f"[DEBUG] Clash 配置解析结果数量 = {len(result)}")
+            print("[DEBUG] ===== get_nodes() end =====")
+            return result
 
-            processed_list = []
-            for item in data:
-                if isinstance(item, tuple):
-                    processed_list.extend([item[0], item[1]])
-                else:
-                    processed_list.append(item)
-            return processed_list
+        if "outbounds" in content:
+            result = parse_singbox_config(content)
+            print(f"[DEBUG] sing-box 配置解析结果数量 = {len(result)}")
+            print("[DEBUG] ===== get_nodes() end =====")
+            return result
 
-        # sing-box 配置：从 outbounds 中提取真实节点
-        elif 'outbounds' in content:
-            print("sing-box 配置")
-            outbounds = []
-            # 排除不需要的类型，仅保留真实出站节点
-            excluded_types = {"selector", "urltest", "direct", "block", "dns"}
-            filtered_outbounds = [
-                outbound
-                for outbound in content['outbounds']
-                if outbound.get("type") not in excluded_types
-            ]
-            outbounds.extend(filtered_outbounds)
-            return outbounds
+        print("[WARN] content 是 dict，但既不含 proxies，也不含 outbounds，无法识别为 Clash/sing-box")
+        print("[DEBUG] ===== get_nodes() end =====")
+        return []
 
-    # content 为纯文本：按通用节点分享链接格式解析
-    data = parse_content(content)
-    processed_list = []
-    for item in data:
-        if isinstance(item, tuple):
-            processed_list.extend([item[0], item[1]])
-        else:
-            processed_list.append(item)
-    return processed_list
-
+    # 4) 纯文本：通用分享链接解析
+    result = parse_text_nodes(content)
+    print(f"get_nodes——content 为纯文本：按通用节点分享链接格式解析::{result}")
+    print(f"[DEBUG] 纯文本解析结果数量 = {len(result)}")
+    print("[DEBUG] ===== get_nodes() end =====")
+    return result
 
 def parse_content(content):
     """
@@ -452,55 +569,139 @@ def parse_content(content):
     返回：
         list[dict]: 解析得到的节点列表。
     """
-    print("parse_content")
+    print("[DEBUG] ===== parse_content() start =====")
+    print(f"[DEBUG] input type = {type(content)}")
 
     # 1. content 为 None，直接返回空列表，避免 'NoneType' 错误
     if content is None:
         print("[WARN] parse_content() 收到 content=None，返回空列表。")
+        print("[DEBUG] ===== parse_content() end =====")
         return []
 
     # 2. 如果是 bytes，尝试解码为 str
     if isinstance(content, bytes):
+        print(f"[DEBUG] content 是 bytes，长度 = {len(content)}，准备 utf-8 解码")
         try:
             content = content.decode("utf-8", errors="ignore")
+            print(f"[DEBUG] bytes 解码成功，解码后 type = {type(content)}，长度 = {len(content)}")
         except Exception as e:
             print(f"[WARN] parse_content() 解码 bytes 失败: {e}")
+            print("[DEBUG] ===== parse_content() end =====")
             return []
 
     # 3. 如果是 list / tuple，当成“每个元素一行”
     if isinstance(content, (list, tuple)):
+        print(f"[DEBUG] content 是 {type(content)}，元素数量 = {len(content)}，准备 join 为多行字符串")
         try:
+            preview = [repr(x)[:120] for x in content[:3]]
+            print(f"[DEBUG] list/tuple 前 3 项预览 = {preview}")
             content = "\n".join(str(x) for x in content)
+            print(f"[DEBUG] join 成功，join 后 type = {type(content)}，长度 = {len(content)}")
         except Exception as e:
             print(f"[WARN] parse_content() 将 list/tuple 转为字符串失败: {e}")
+            print("[DEBUG] ===== parse_content() end =====")
             return []
 
     # 4. 如果还不是 str，放弃解析
     if not isinstance(content, str):
         print(f"[WARN] parse_content() 期望 str，但收到 {type(content)}，返回空列表。")
+        print("[DEBUG] ===== parse_content() end =====")
+        return []
+
+    print(f"[DEBUG] content 字符串长度 = {len(content)}")
+    print(f"[DEBUG] content 前 300 个字符预览 = {repr(content[:300])}")
+
+    # 可选：处理 BOM
+    if content.startswith("\ufeff"):
+        print("[DEBUG] 检测到 BOM，准备移除")
+        content = content.lstrip("\ufeff")
+
+    # 可选：如果内容里是字面量 \\n 而不是真换行，则替换
+    if "\\n" in content and "\n" not in content:
+        print("[DEBUG] 检测到字面量 '\\n'，但没有真实换行，准备替换为真实换行")
+        content = content.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\r", "\n")
+
+    lines = content.splitlines()
+    print(f"[DEBUG] splitlines() 后总行数 = {len(lines)}")
+
+    if lines:
+        preview_lines = [repr(x[:150]) for x in lines[:5]]
+        print(f"[DEBUG] 前 5 行预览 = {preview_lines}")
+    else:
+        print("[WARN] splitlines() 后没有任何行")
+        print("[DEBUG] ===== parse_content() end =====")
         return []
 
     # ===== 正常解析逻辑 =====
     nodelist = []
-    for line in content.splitlines():
+    success_count = 0
+    skip_empty_count = 0
+    skip_no_parser_count = 0
+    parse_fail_count = 0
+
+    for idx, line in enumerate(lines, 1):
+        print(f"[DEBUG] ---------- 第 {idx} 行开始 ----------")
+        print(f"[DEBUG] 原始行内容 = {repr(line[:300])}")
+
         t = line.strip()
+        print(f"[DEBUG] strip 后 = {repr(t[:300])}")
+
         if not t:
+            skip_empty_count += 1
+            print(f"[DEBUG] 第 {idx} 行为空，跳过")
             continue
 
-        factory = get_parser(t)
+        # 如果行首尾有引号/逗号，也顺手清一下，方便调试
+        t_clean = t.strip(",").strip("'").strip('"')
+        if t_clean != t:
+            print(f"[DEBUG] 第 {idx} 行清理引号/逗号后 = {repr(t_clean[:300])}")
+        t = t_clean
+
+        # 打印协议头，方便看是不是 anytls:// / vless:// 之类
+        scheme_preview = t.split("://", 1)[0] if "://" in t else "<NO_SCHEME>"
+        print(f"[DEBUG] 第 {idx} 行协议预览 = {scheme_preview}")
+
+        try:
+            factory = get_parser(t)
+            print(f"[DEBUG] 第 {idx} 行 get_parser() 返回 = {factory}")
+        except Exception as e:
+            factory = None
+            print(f"[WARN] 第 {idx} 行 get_parser() 调用异常: {e}")
+
         if not factory:
+            skip_no_parser_count += 1
+            print(f"[WARN] 第 {idx} 行没有匹配到解析器，已跳过。内容前 120 字符 = {repr(t[:120])}")
             continue
 
         try:
+            print(f"[DEBUG] 第 {idx} 行开始调用解析器")
             node = factory(t)
+            print(f"[DEBUG] 第 {idx} 行解析结果 type = {type(node)}")
+            print(f"[DEBUG] 第 {idx} 行解析结果预览 = {repr(node)[:500]}")
         except Exception as e:
-            print(f"[WARN] 单行解析失败，已跳过: {t[:60]!r}...  错误: {e}")
+            parse_fail_count += 1
+            print(f"[WARN] 单行解析失败，已跳过: {t[:60]!r}... 错误: {e}")
             node = None
 
         if node:
+            success_count += 1
             # 如果你想默认给每个节点加 domain_resolver，可以在这里打开
             # node["domain_resolver"] = "dns_direct"
             nodelist.append(node)
+            print(f"[DEBUG] 第 {idx} 行解析成功，当前 nodelist 长度 = {len(nodelist)}")
+        else:
+            print(f"[DEBUG] 第 {idx} 行 node 为空，不加入 nodelist")
+
+        print(f"[DEBUG] ---------- 第 {idx} 行结束 ----------")
+
+    print("[DEBUG] ===== parse_content() summary =====")
+    print(f"[DEBUG] 总行数 = {len(lines)}")
+    print(f"[DEBUG] 成功解析行数 = {success_count}")
+    print(f"[DEBUG] 空行跳过数 = {skip_empty_count}")
+    print(f"[DEBUG] 无解析器跳过数 = {skip_no_parser_count}")
+    print(f"[DEBUG] 解析异常数 = {parse_fail_count}")
+    print(f"[DEBUG] 最终 nodelist 长度 = {len(nodelist)}")
+    print("[DEBUG] ===== parse_content() end =====")
 
     return nodelist
 
@@ -522,24 +723,105 @@ def get_parser(node):
         Callable | None: 对应协议的解析函数，
         若无法解析或被排除，则返回 None。
     """
-    proto = tool.get_protocol(node)
+    print("[DEBUG] ===== get_parser() start =====")
+    print(f"[DEBUG] input type = {type(node)}")
 
-    # 处理需要排除的协议列表
-    if providers.get('exclude_protocol'):
-        eps = providers['exclude_protocol'].split(',')
-        if len(eps) > 0:
-            eps = [protocol.strip() for protocol in eps]
-            # 将短写 "hy2" 兼容为 "hysteria2"
-            if 'hy2' in eps:
-                index = eps.index('hy2')
-                eps[index] = 'hysteria2'
-            if proto in eps:
-                return None
-
-    if not proto or proto not in parsers_mod.keys():
+    if node is None:
+        print("[WARN] get_parser() 收到 node=None，返回 None")
+        print("[DEBUG] ===== get_parser() end =====")
         return None
 
-    return parsers_mod[proto].parse
+    if not isinstance(node, str):
+        print(f"[WARN] get_parser() 期望 str，但收到 {type(node)}，返回 None")
+        print("[DEBUG] ===== get_parser() end =====")
+        return None
+
+    print(f"[DEBUG] 原始 node 前 200 字符 = {repr(node[:200])}")
+
+    node = node.strip().lstrip("\ufeff")
+    print(f"[DEBUG] 清理后 node 前 200 字符 = {repr(node[:200])}")
+
+    # 1) 获取协议
+    try:
+        proto = tool.get_protocol(node)
+        print(f"[DEBUG] tool.get_protocol(node) => {repr(proto)}")
+    except Exception as e:
+        print(f"[WARN] tool.get_protocol(node) 调用异常: {e}")
+        print("[DEBUG] ===== get_parser() end =====")
+        return None
+
+    # 2) 打印 providers.exclude_protocol 原始值
+    exclude_raw = providers.get('exclude_protocol')
+    print(f"[DEBUG] providers.get('exclude_protocol') => {repr(exclude_raw)}")
+
+    # 3) 处理需要排除的协议列表
+    if exclude_raw:
+        try:
+            eps = exclude_raw.split(',')
+            print(f"[DEBUG] exclude_protocol split 后 = {eps}")
+
+            if len(eps) > 0:
+                eps = [protocol.strip() for protocol in eps]
+                print(f"[DEBUG] exclude_protocol strip 后 = {eps}")
+
+                # 将短写 "hy2" 兼容为 "hysteria2"
+                if 'hy2' in eps:
+                    index = eps.index('hy2')
+                    eps[index] = 'hysteria2'
+                    print(f"[DEBUG] exclude_protocol 中 hy2 已转换为 hysteria2 => {eps}")
+
+                if proto in eps:
+                    print(f"[WARN] 协议 {repr(proto)} 在 exclude_protocol 中，被排除，返回 None")
+                    print("[DEBUG] ===== get_parser() end =====")
+                    return None
+        except Exception as e:
+            print(f"[WARN] 处理 exclude_protocol 时异常: {e}")
+            print("[DEBUG] ===== get_parser() end =====")
+            return None
+    else:
+        print("[DEBUG] 未配置 exclude_protocol，跳过排除逻辑")
+
+    # 4) 打印 parsers_mod 信息
+    try:
+        parser_keys = list(parsers_mod.keys())
+        print(f"[DEBUG] parsers_mod.keys() => {parser_keys}")
+    except Exception as e:
+        print(f"[WARN] 读取 parsers_mod.keys() 异常: {e}")
+        print("[DEBUG] ===== get_parser() end =====")
+        return None
+
+    # 5) 协议不存在
+    if not proto:
+        print("[WARN] proto 为空，返回 None")
+        print("[DEBUG] ===== get_parser() end =====")
+        return None
+
+    if proto not in parsers_mod.keys():
+        print(f"[WARN] 协议 {repr(proto)} 不在 parsers_mod 中，返回 None")
+        print("[DEBUG] ===== get_parser() end =====")
+        return None
+
+    # 6) 取解析器
+    try:
+        parser_obj = parsers_mod[proto]
+        print(f"[DEBUG] parsers_mod[{repr(proto)}] => {parser_obj}")
+    except Exception as e:
+        print(f"[WARN] 读取 parsers_mod[{repr(proto)}] 异常: {e}")
+        print("[DEBUG] ===== get_parser() end =====")
+        return None
+
+    # 7) 取 parse 方法
+    try:
+        parser_func = parser_obj.parse
+        print(f"[DEBUG] parser_obj.parse => {parser_func}")
+    except Exception as e:
+        print(f"[WARN] 获取 parser_obj.parse 异常: {e}")
+        print("[DEBUG] ===== get_parser() end =====")
+        return None
+
+    print(f"[DEBUG] get_parser() 成功返回解析函数: {parser_func}")
+    print("[DEBUG] ===== get_parser() end =====")
+    return parser_func
 
 def get_content_from_url(url, n=10):
     """
@@ -570,7 +852,7 @@ def get_content_from_url(url, n=10):
             - None：内容为空或仅空白。
     """
     UA = ''
-    print('处理: \033[31m' + url + '\033[0m')
+    print('get_content_from_url:::: \033[31m' + url + '\033[0m')
 
     prefixes = [
         "vmess://", "vless://", "ss://", "ssr://", "trojan://", "tuic://",
@@ -610,6 +892,7 @@ def get_content_from_url(url, n=10):
     try:
         response_content = response.content
         response_text = response_content.decode('utf-8-sig')  # utf-8-sig 可以忽略 BOM
+        print(f"response_text::{response_text}")
     except Exception:
         return ''
 
@@ -630,6 +913,7 @@ def get_content_from_url(url, n=10):
 
     # 若包含 'proxies' 字段，尝试按 Clash YAML 解析
     elif 'proxies' in response_text:
+        print("尝试按 Clash YAML 解析")
         yaml_content = response.content.decode('utf-8')
         # 将制表符替换为空格，避免 YAML 解析报错
         response_text_no_tabs = yaml_content.replace('\t', ' ')
@@ -643,6 +927,7 @@ def get_content_from_url(url, n=10):
 
     # 若包含 'outbounds' 字段，尝试按 sing-box JSON 解析
     elif 'outbounds' in response_text:
+        print("尝试按 sing-box JSON 解析")
         try:
             response_text = json.loads(response.text)
             return response_text
@@ -655,10 +940,13 @@ def get_content_from_url(url, n=10):
     # 若以上均不符合，则尝试按 Base64 文本解码为节点分享内容
     else:
         try:
+            print("尝试按 Base64 文本解码为节点分享内容")
             response_text = tool.b64Decode(response_text)
             response_text = response_text.decode(encoding="utf-8")
+            
         except Exception:
             # Base64 解码失败，则保持原始文本
+            print("Base64 解码失败，则保持原始文本")
             pass
 
     return response_text
