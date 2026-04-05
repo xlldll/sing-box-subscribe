@@ -133,46 +133,56 @@ def process_subscribes(subscribes):
 
 def action_keywords(nodes, action, keywords):
     """
-    按节点名称 (tag) 中的关键字进行过滤。
+    Filter nodes by matching node['tag'] against a list of regex patterns.
 
-    参数：
-        nodes: list[dict]
-            节点列表。
-        action: str
-            "include" → 只保留匹配关键字的节点
-            "exclude" → 移除匹配关键字的节点
-        keywords: list[str]
-            关键字列表，会以 | 拼成正则表达式。
+    Usage:
+        action == "include": keep nodes that match ANY keyword regex
+        action == "exclude": remove nodes that match ANY keyword regex
 
-    说明：
-        对 tag 执行正则匹配，比如：
-        keywords = ["HK", "🇭🇰"]
-        会变成正则：  "HK|🇭🇰"
+    Notes:
+        - Each keyword is treated as an independent regex pattern.
+        - This supports inline regex flags such as (?i).
+        - Avoid joining patterns with "|" because inline flags in the middle
+          of a combined regex will raise:
+          re.error: global flags not at the start of the expression
     """
-    temp_nodes = []
     exclude_mode = (action == "exclude")
+    compiled_patterns = []
 
-    # 如果没有关键字，不执行过滤
-    combined_pattern = "|".join(keywords or [])
-    if not combined_pattern or combined_pattern.isspace():
+    for kw in (keywords or []):
+        if not isinstance(kw, str):
+            continue
+        kw = kw.strip()
+        if not kw:
+            continue
+
+        try:
+            compiled_patterns.append(re.compile(kw))
+        except re.error as e:
+            print(f"[ERROR] Invalid regex keyword: {kw!r} -> {e}")
+            raise
+
+    if not compiled_patterns:
         return nodes
 
-    regex = re.compile(combined_pattern)
+    filtered_nodes = []
 
     for node in nodes:
-        tag = node.get("tag", "")
-        matched = bool(regex.search(tag))
+        tag = str(node.get("tag", ""))
 
-        # include →  matched == True  时保留
-        # exclude →  matched == False 时保留
-        # 使用 XOR（异或）来统一逻辑：
-        # matched ^ exclude_mode
-        #   include: matched ^ False → matched
-        #   exclude: matched ^ True  → not matched
-        if matched ^ exclude_mode:
-            temp_nodes.append(node)
+        matched = any(pattern.search(tag) for pattern in compiled_patterns)
 
-    return temp_nodes
+        if action == "include":
+            if matched:
+                filtered_nodes.append(node)
+        elif action == "exclude":
+            if not matched:
+                filtered_nodes.append(node)
+        else:
+            print(f"[WARN] Unknown filter action: {action!r}, skip this filter")
+            return nodes
+
+    return filtered_nodes
 
 
 
