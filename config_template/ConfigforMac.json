@@ -146,7 +146,7 @@
       "tag": "🔐 PROXY",
       "type": "selector",
       "outbounds": [
-        "🧐 HY2",
+        "🧐 ANY",
         "🇸🇬 SG",
         "🇹🇼 TW",
         "🇭🇰 HK",
@@ -160,12 +160,12 @@
       ]
     },
     {
-      "tag": "🧐 HY2",
+      "tag": "🧐 ANY",
       "type": "selector",
       "outbounds": [
-        "🇸🇬 HY2SG",
-        "🇹🇼 HY2TW",
-        "🇭🇰 HY2HK",
+        "🇸🇬 ANYSG",
+        "🇹🇼 ANYTW",
+        "🇭🇰 ANYHK",
         "👑 高级节点",
         "📉 省流节点",
         "👊 所有节点",
@@ -185,7 +185,9 @@
           "action": "exclude",
           "keywords": [
             "(?i)(专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
-            "低倍率|省流|大流量|下载|限速"
+            "(?i)(1\\.0*[1-9]\\d*x|[1-9]\\d*\\.\\d+x)",
+            "低倍率|省流|大流量|下载|限速",
+            "(?i)(0\\.\\d+x)"
           ]
         }
       ]
@@ -205,28 +207,24 @@
         {
           "action": "exclude",
           "type": [
-            "trojan",
-            "vless",
-            "hysteria2",
-            "shadowsocks"
+            "anytls",
+            "vless"
           ]
         },
         {
           "action": "exclude",
           "keywords": [
             "(?i)(专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
-            "低倍率|省流|大流量|下载|限速"
+            "(?i)(1\\.0*[1-9]\\d*x|[1-9]\\d*\\.\\d+x)",
+            "低倍率|省流|大流量|下载|限速",
+            "(?i)(0\\.\\d+x)"
           ]
         }
       ]
     },
     {
       "tag": "🇸🇬 SG",
-      "type": "urltest",
-      "url": "https://www.google.com/generate_204",
-      "interval": "15s",
-      "idle_timeout": "3m",
-      "tolerance": 50,
+      "type": "selector",
       "outbounds": [
         "{all}",
         "REJECT"
@@ -241,28 +239,23 @@
         {
           "action": "include",
           "type": [
-            "trojan",
-            "vless",
-            "shadowsocks",
-            "anytls"
+            "vless"
           ]
         },
         {
           "action": "exclude",
           "keywords": [
             "(?i)(专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
-            "低倍率|省流|大流量|下载|限速"
+            "(?i)(1\\.0*[1-9]\\d*x|[1-9]\\d*\\.\\d+x)",
+            "低倍率|省流|大流量|下载|限速",
+            "(?i)(0\\.\\d+x)"
           ]
         }
       ]
     },
     {
       "tag": "🇹🇼 TW",
-      "type": "urltest",
-      "url": "https://www.google.com/generate_204",
-      "interval": "10s",
-      "idle_timeout": "3m",
-      "tolerance": 80,
+      "type": "selector",
       "outbounds": [
         "{all}",
         "REJECT"
@@ -277,28 +270,23 @@
         {
           "action": "include",
           "type": [
-            "trojan",
-            "vless",
-            "shadowsocks",
-            "anytls"
+            "vless"
           ]
         },
         {
           "action": "exclude",
           "keywords": [
             "(?i)(专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
-            "低倍率|省流|大流量|下载|限速"
+            "(?i)(1\\.0*[1-9]\\d*x|[1-9]\\d*\\.\\d+x)",
+            "低倍率|省流|大流量|下载|限速",
+            "(?i)(0\\.\\d+x)"
           ]
         }
       ]
     },
     {
       "tag": "🇭🇰 HK",
-      "type": "urltest",
-      "url": "https://www.google.com/generate_204",
-      "interval": "10s",
-      "idle_timeout": "3m",
-      "tolerance": 80,
+      "type": "selector",
       "outbounds": [
         "{all}",
         "REJECT"
@@ -313,28 +301,23 @@
         {
           "action": "include",
           "type": [
-            "trojan",
-            "vless",
-            "shadowsocks",
-            "anytls"
+            "vless"
           ]
         },
         {
           "action": "exclude",
           "keywords": [
             "(?i)(专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
-            "低倍率|省流|大流量|下载|限速"
+            "(?i)(1\\.0*[1-9]\\d*x|[1-9]\\d*\\.\\d+x)",
+            "低倍率|省流|大流量|下载|限速",
+            "(?i)(0\\.\\d+x)"
           ]
         }
       ]
     },
     {
       "tag": "🇯🇵 JP",
-      "type": "urltest",
-      "url": "https://www.google.com/generate_204",
-      "interval": "10s",
-      "idle_timeout": "3m",
-      "tolerance": 80,
+      "type": "selector",
       "outbounds": [
         "{all}",
         "REJECT"
@@ -349,28 +332,23 @@
         {
           "action": "include",
           "type": [
-            "trojan",
-            "vless",
-            "shadowsocks",
-            "anytls"
+            "vless"
           ]
         },
         {
           "action": "exclude",
           "keywords": [
             "(?i)(专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
-            "低倍率|省流|大流量|下载|限速"
+            "(?i)(1\\.0*[1-9]\\d*x|[1-9]\\d*\\.\\d+x)",
+            "低倍率|省流|大流量|下载|限速",
+            "(?i)(0\\.\\d+x)"
           ]
         }
       ]
     },
     {
       "tag": "🇺🇸 US",
-      "type": "urltest",
-      "url": "https://www.google.com/generate_204",
-      "interval": "10s",
-      "idle_timeout": "3m",
-      "tolerance": 80,
+      "type": "selector",
       "outbounds": [
         "{all}",
         "REJECT"
@@ -385,28 +363,23 @@
         {
           "action": "include",
           "type": [
-            "trojan",
-            "vless",
-            "shadowsocks",
-            "anytls"
+            "vless"
           ]
         },
         {
           "action": "exclude",
           "keywords": [
             "(?i)(专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
-            "低倍率|省流|大流量|下载|限速"
+            "(?i)(1\\.0*[1-9]\\d*x|[1-9]\\d*\\.\\d+x)",
+            "低倍率|省流|大流量|下载|限速",
+            "(?i)(0\\.\\d+x)"
           ]
         }
       ]
     },
     {
-      "tag": "🇹🇼 HY2TW",
-      "type": "urltest",
-      "url": "https://www.google.com/generate_204",
-      "interval": "10s",
-      "idle_timeout": "3m",
-      "tolerance": 80,
+      "tag": "🇹🇼 ANYTW",
+      "type": "selector",
       "outbounds": [
         "{all}",
         "REJECT"
@@ -423,16 +396,21 @@
           "type": [
             "anytls"
           ]
+        },
+        {
+          "action": "exclude",
+          "keywords": [
+            "(?i)(专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "(?i)(1\\.0*[1-9]\\d*x|[1-9]\\d*\\.\\d+x)",
+            "低倍率|省流|大流量|下载|限速",
+            "(?i)(0\\.\\d+x)"
+          ]
         }
       ]
     },
     {
-      "tag": "🇸🇬 HY2SG",
-      "type": "urltest",
-      "url": "https://www.google.com/generate_204",
-      "interval": "10s",
-      "idle_timeout": "3m",
-      "tolerance": 80,
+      "tag": "🇸🇬 ANYSG",
+      "type": "selector",
       "outbounds": [
         "{all}",
         "REJECT"
@@ -449,16 +427,21 @@
           "type": [
             "anytls"
           ]
+        },
+        {
+          "action": "exclude",
+          "keywords": [
+            "(?i)(专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "(?i)(1\\.0*[1-9]\\d*x|[1-9]\\d*\\.\\d+x)",
+            "低倍率|省流|大流量|下载|限速",
+            "(?i)(0\\.\\d+x)"
+          ]
         }
       ]
     },
     {
-      "tag": "🇭🇰 HY2HK",
-      "type": "urltest",
-      "url": "https://www.google.com/generate_204",
-      "interval": "10s",
-      "idle_timeout": "3m",
-      "tolerance": 80,
+      "tag": "🇭🇰 ANYHK",
+      "type": "selector",
       "outbounds": [
         "{all}",
         "REJECT"
@@ -475,16 +458,21 @@
           "type": [
             "anytls"
           ]
+        },
+        {
+          "action": "exclude",
+          "keywords": [
+            "(?i)(专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "(?i)(1\\.0*[1-9]\\d*x|[1-9]\\d*\\.\\d+x)",
+            "低倍率|省流|大流量|下载|限速",
+            "(?i)(0\\.\\d+x)"
+          ]
         }
       ]
     },
     {
       "tag": "👑 高级节点",
-      "type": "urltest",
-      "url": "https://www.google.com/generate_204",
-      "interval": "10s",
-      "idle_timeout": "3m",
-      "tolerance": 80,
+      "type": "selector",
       "outbounds": [
         "{all}",
         "REJECT"
@@ -493,26 +481,22 @@
         {
           "action": "include",
           "keywords": [
-            "(?i)(专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)"
+            "(?i)(限速|专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "(?i)(1\\.0*[1-9]\\d*x|[1-9]\\d*\\.\\d+x)"
           ]
         },
         {
           "action": "exclude",
           "keywords": [
-            "低倍率|省流|大流量|下载",
-            "限速",
-            "LM"
+            "低倍率|省流|大流量|下载|限速",
+            "(?i)(0\\.\\d+x)"
           ]
         }
       ]
     },
     {
       "tag": "📉 省流节点",
-      "type": "urltest",
-      "url": "https://www.google.com/generate_204",
-      "interval": "10s",
-      "idle_timeout": "3m",
-      "tolerance": 80,
+      "type": "selector",
       "outbounds": [
         "{all}",
         "REJECT"
@@ -521,15 +505,15 @@
         {
           "action": "include",
           "keywords": [
-            "低倍率|省流|大流量|下载"
+            "低倍率|省流|大流量|下载",
+            "(?i)(0\\.\\d+x)"
           ]
         },
         {
           "action": "exclude",
           "keywords": [
-            "(?i)(专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
-            "限速",
-            "LM"
+            "(?i)(限速|专用|高级|急速|高倍率|游戏|game|IEPL|IPLC|AIA|CTM|CC|AC)",
+            "(?i)(1\\.0*[1-9]\\d*x|[1-9]\\d*\\.\\d+x)"
           ]
         }
       ]
