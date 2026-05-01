@@ -15,3 +15,8 @@
 - 根据模板生成配置
 - python3 gen_conf_all.py
 - 根据singbox生成配置
+
+- custom.ini for shellcrash
+- DustinWin-ruleset全分组规则+去广告 DustinWin_RS_Full.yaml
+- LCQ规则 LCQ.yaml - clash_providers.list
+- 520 LCQ规则 https://raw.githubusercontent.com/xlldll/sing-box-subscribe/refs/heads/main/custom.ini servers.list
