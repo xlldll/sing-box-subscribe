@@ -16,18 +16,18 @@
  */
 const ruleOptionsEnable = {
     AI: true, // 国外AI服务
-    Media: true, // 国外视频平台
-    FCM: true, // GoogleFCM服务
+    Media: false, // 国外视频平台
+    FCM: false, // GoogleFCM服务
     Google: true, // Google服务
-    Microsoft: true, // Microsoft服务
-    Apple: true, // Apple服务
-    Telegram: true, // Telegram通讯软件
-    Steam: true, // Steam游戏平台
-    TikTok: true, // TikTok视频平台
-    Twitter: true, // Twitter社交平台
+    Microsoft: false, // Microsoft服务
+    Apple: false, // Apple服务
+    Telegram: false, // Telegram通讯软件
+    Steam: false, // Steam游戏平台
+    TikTok: false, // TikTok视频平台
+    Twitter: false, // Twitter社交平台
     Emby: true, // Emby媒体服务
-    PikPak: true, // PikPak网盘服务
-    Spotify: true, // Spotify音乐服务
+    PikPak: false, // PikPak网盘服务
+    Spotify: false, // Spotify音乐服务
     AdBlock: true, // 广告拦截
 };
 
