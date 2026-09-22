@@ -5,6 +5,7 @@
  * 脚本链接：https://raw.githubusercontent.com/AIsouler/MyClash/main/Script/mihomoScript.js
  * 友情推荐，非常好用、省电且内存占用低的代理软件：https://github.com/appshubcc/Bettbox
  * 過濾了日本節點
+ * https://github.com/xlldll/sing-box-subscribe/blob/main/edge-functions/script_tv.js
  */
 
 // --- 静态配置区域 ---
@@ -15,7 +16,7 @@
  * false = 禁用
  */
 const ruleOptionsEnable = {
-    AI: false, // 国外AI服务
+    AI: true, // 国外AI服务
     Media: false, // 国外视频平台
     FCM: false, // GoogleFCM服务
     Google: false, // Google服务
@@ -23,7 +24,7 @@ const ruleOptionsEnable = {
     Apple: false, // Apple服务
     Telegram: false, // Telegram通讯软件
     Steam: false, // Steam游戏平台
-    TikTok: false, // TikTok视频平台
+    TikTok: true, // TikTok视频平台
     Twitter: false, // Twitter社交平台
     Emby: true, // Emby媒体服务
     PikPak: false, // PikPak网盘服务
@@ -741,7 +742,7 @@ function main(config) {
         {
             ...selectBaseOption,
             name: '直连',
-            proxies: ['🇨🇳 直连 | IPv4优先', '🇨🇳 直连 | IPv6优先', '🇨🇳 直连 | 双栈'],
+            proxies: ['🇨🇳 直连 | 双栈', '🇨🇳 直连 | IPv4优先', '🇨🇳 直连 | IPv6优先'],
             url: 'https://connectivitycheck.platform.hicloud.com/generate_204',
             icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China_Map.png',
         },
@@ -885,6 +886,10 @@ function main(config) {
     newConfig['proxies'] = [
         ...filteredProxies,
         {
+            name: '🇨🇳 直连 | 双栈',
+            type: 'direct',
+        },
+        {
             name: '🇨🇳 直连 | IPv4优先',
             type: 'direct',
             'ip-version': 'ipv4-prefer',
@@ -893,11 +898,7 @@ function main(config) {
             name: '🇨🇳 直连 | IPv6优先',
             type: 'direct',
             'ip-version': 'ipv6-prefer',
-        },
-        {
-            name: '🇨🇳 直连 | 双栈',
-            type: 'direct',
-        },
+        }
     ];
 
     newConfig['proxy-groups'] = [globalGroup, ...functionalGroups, ...generatedRegionGroups];
