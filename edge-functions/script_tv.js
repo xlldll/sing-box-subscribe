@@ -4,7 +4,7 @@
  * 原仓库：https://github.com/AIsouler/MyClash
  * 脚本链接：https://raw.githubusercontent.com/AIsouler/MyClash/main/Script/mihomoScript.js
  * 友情推荐，非常好用、省电且内存占用低的代理软件：https://github.com/appshubcc/Bettbox
- 
+ * 過濾了日本節點
  */
 
 // --- 静态配置区域 ---
@@ -795,7 +795,7 @@ function main(config) {
 
     newConfig['dns'] = {
         enable: true,
-        ipv6: false,
+        ipv6: true,
         'use-hosts': true,
         'cache-algorithm': 'arc',
         'use-system-hosts': true,
@@ -844,7 +844,7 @@ function main(config) {
     };
 
     newConfig['allow-lan'] = true;
-    newConfig['ipv6'] = false;
+    newConfig['ipv6'] = true;
     newConfig['mode'] = 'rule';
     newConfig['log-level'] = 'info';
     newConfig['bind-address'] = '*';
