@@ -38,7 +38,7 @@
  */
 
 const ruleOptionsEnable = {
-    AI: true, // 國外 AI 服務
+    AI: false, // 國外 AI 服務
     Media: false, // 國外影音平台
     FCM: false, // Google FCM
     Google: false, // Google
@@ -46,12 +46,12 @@ const ruleOptionsEnable = {
     Apple: false, // Apple
     Telegram: false, // Telegram
     Steam: false, // Steam
-    TikTok: true, // TikTok
+    TikTok: false, // TikTok
     Twitter: false, // Twitter / X
-    Emby: true, // Emby
+    Emby: false, // Emby
     PikPak: false, // PikPak
     Spotify: false, // Spotify
-    AdBlock: true, // 廣告攔截
+    AdBlock: false, // 廣告攔截
 };
 
 /* ============================================================================
@@ -344,11 +344,11 @@ const baseRuleProviders = {
  */
 
 const groupBaseOption = {
-    interval: 600,
+    interval: 1800,
     timeout: 3000,
     url: "https://g.cn/generate_204",
     lazy: true,
-    "max-failed-times": 3,
+    "max-failed-times": 2,
     "empty-fallback": "REJECT",
 };
 
