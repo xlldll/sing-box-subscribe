@@ -99,7 +99,7 @@ const regionDefinitions = [
     },
 
     {
-        name: "台湾省",
+        name: "台湾",
         regex: /🇹🇼|台湾|TW|[Tt]aiwan/,
         icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Taiwan.png",
     },
@@ -261,7 +261,7 @@ const loadBalanceBaseOption = {
 const serviceConfigs = [
     {
         name: "AI",
-        defaultSelected: "美国",
+        defaultSelected: "台灣",
         preferResidential: true,
         providers: {
             ai: {
@@ -277,7 +277,7 @@ const serviceConfigs = [
 
     {
         name: "Facebook",
-        defaultSelected: "美国",
+        defaultSelected: "台湾",
         preferResidential: true,
         providers: {
             facebook: {
@@ -316,6 +316,7 @@ const serviceConfigs = [
 
     {
         name: "GoogleAccount",
+        defaultSelected: "台湾",
         preferResidential: true,
         icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Google_Search.png",
         providers: {},
@@ -328,6 +329,7 @@ const serviceConfigs = [
 
     {
         name: "MicrosoftAccount",
+        defaultSelected: "台湾",
         preferResidential: true,
         icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Microsoft.png",
         providers: {},
@@ -341,6 +343,7 @@ const serviceConfigs = [
 
     {
         name: "AppleID",
+        defaultSelected: "台湾",
         preferResidential: true,
         icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Apple.png",
         providers: {},
@@ -353,7 +356,7 @@ const serviceConfigs = [
 
     {
         name: "Media",
-        defaultSelected: "美国",
+        defaultSelected: "台湾",
         providers: {
             youtube: {
                 ...ruleProviderCommonDomain,
@@ -901,23 +904,65 @@ function main(config) {
 
     const defaultProxyCandidates = [
         ...groupNamesOfSelect,
+
         ...(hasResidentialProxies
             ? [residentialProxyDefinition.name]
             : []),
+
         ...normalBaseGroupNames,
     ];
-    // 順序
+
+
+    /*
+     * 默认代理
+     */
     functionalGroups.push({
         ...selectBaseOption,
+
         name: "默认代理",
+
         proxies: defaultProxyCandidates,
-        icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png",
+
+        icon:
+            "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png",
     });
 
+
+    /*
+     * 敏感代理组
+     *
+     * 只包含：
+     * 默认代理
+     * 家宽
+     *
+     * 手动选择。
+     */
+    const sensitiveProxyGroup = {
+        ...selectBaseOption,
+
+        name: "敏感代理组",
+
+        proxies: [
+            "默认代理",
+
+            ...(hasResidentialProxies
+                ? [residentialProxyDefinition.name]
+                : []),
+        ],
+
+        icon:
+            "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png",
+    };
+
+
+    /*
+     * 基础代理组
+     */
     if (hasRegularProxies) {
         functionalGroups.push(
             {
                 ...selectBaseOption,
+
                 name: "手动选择",
 
                 proxies: [
@@ -925,29 +970,47 @@ function main(config) {
                     ...residentialProxyNames,
                 ],
 
-                icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Rocket.png",
+                icon:
+                    "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Rocket.png",
             },
+
             {
                 ...loadBalanceBaseOption,
+
                 name: "负载均衡",
+
                 proxies: regularProxyNames,
             },
+
             {
                 ...urlTestBaseOption,
+
                 name: "自动选择",
+
                 proxies: regularProxyNames,
             },
         );
+
     } else if (hasResidentialProxies) {
+
         functionalGroups.push({
             ...selectBaseOption,
+
             name: "手动选择",
+
             proxies: residentialProxyNames,
-            icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Rocket.png",
+
+            icon:
+                "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Rocket.png",
         });
     }
 
+
+    /*
+     * 服务分流组
+     */
     for (const svc of serviceConfigs) {
+
         if (!ruleOptionsEnable[svc.name]) {
             continue;
         }
@@ -959,9 +1022,30 @@ function main(config) {
             svc.providers || {},
         );
 
+
+        /*
+         * preferResidential = true
+         * 代表敏感服务。
+         *
+         * 敏感服务：
+         * 敏感代理组放第一位。
+         *
+         * 普通服务：
+         * 保持原来的组结构。
+         */
         const groupProxies = svc.reject
-            ? ["REJECT", "REJECT-DROP", "PASS"]
+
+            ? [
+                "REJECT",
+                "REJECT-DROP",
+                "PASS",
+            ]
+
             : [
+                ...(svc.preferResidential
+                    ? ["敏感代理组"]
+                    : []),
+
                 "默认代理",
 
                 ...(hasResidentialProxies
@@ -972,79 +1056,140 @@ function main(config) {
 
                 ...groupNamesOfSelect,
 
-                ...(svc.direct ? ["直连"] : []),
+                ...(svc.direct
+                    ? ["直连"]
+                    : []),
             ];
+
 
         let effectiveDefaultSelected;
 
+
         if (!svc.reject) {
+
+            /*
+             * 原来：
+             *
+             * preferResidential
+             * → 家宽
+             *
+             * 现在：
+             *
+             * preferResidential
+             * → 敏感代理组
+             */
             const requestedDefault =
                 svc.preferResidential &&
                     hasResidentialProxies
-                    ? residentialProxyDefinition.name
+
+                    ? "敏感代理组"
+
                     : svc.defaultSelected;
+
 
             if (
                 requestedDefault &&
-                groupProxies.includes(requestedDefault)
+                groupProxies.includes(
+                    requestedDefault
+                )
             ) {
+
                 effectiveDefaultSelected =
                     requestedDefault;
+
             } else {
+
                 effectiveDefaultSelected =
                     "默认代理";
             }
         }
 
+
         functionalGroups.push({
             ...selectBaseOption,
+
             name: svc.name,
+
             icon: svc.icon,
+
             proxies: groupProxies,
 
-            ...(effectiveDefaultSelected !== undefined && {
-                "default-selected":
-                    effectiveDefaultSelected,
-            }),
+            ...(
+                effectiveDefaultSelected !==
+                undefined && {
+
+                    "default-selected":
+                        effectiveDefaultSelected,
+                }
+            ),
         });
     }
 
+
+    /*
+     * 漏网之鱼 / 直连
+     */
     functionalGroups.push(
         {
             ...selectBaseOption,
+
             name: "漏网之鱼",
-            proxies: ["默认代理", "直连"],
-            icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Stack.png",
+
+            proxies: [
+                "默认代理",
+                "直连",
+            ],
+
+            icon:
+                "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Stack.png",
         },
+
         {
             ...selectBaseOption,
+
             name: "直连",
+
             proxies: [
                 "🇨🇳 直连 | 双栈",
                 "🇨🇳 直连 | IPv4优先",
                 "🇨🇳 直连 | IPv6优先",
             ],
-            url: "https://connectivitycheck.platform.hicloud.com/generate_204",
-            icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China_Map.png",
+
+            url:
+                "https://connectivitycheck.platform.hicloud.com/generate_204",
+
+            icon:
+                "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/China_Map.png",
         },
     );
 
+
+    /*
+     * GLOBAL
+     */
     const globalGroup = {
         ...selectBaseOption,
+
         name: "GLOBAL",
+
         proxies: [
+            "敏感代理组",
+
             ...residentialGroups.map(
                 (group) => group.name,
             ),
+
             ...functionalGroups.map(
                 (group) => group.name,
             ),
+
             ...generatedRegionGroups.map(
                 (group) => group.name,
             ),
         ],
 
-        icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Global.png",
+        icon:
+            "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Global.png",
     };
 
     const originalDnsConfig =
@@ -1288,6 +1433,7 @@ function main(config) {
     ];
 
     newConfig["proxy-groups"] = [
+        sensitiveProxyGroup,
         globalGroup,
         ...functionalGroups,
         ...residentialGroups,
