@@ -68,48 +68,41 @@ const rules = [
 
 const regionDefinitions = [
     {
-        name: "香港",
-        regex: /🇭🇰|港|HK|[Hh]ong\s*[Kk]ong/,
-        icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Hong_Kong.png",
+        name: "台湾",
+        regex: /🇹🇼|台湾|TW|[Tt]aiwan/,
+        icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Taiwan.png",
     },
-
     {
         name: "周邊地區",
         regex:
             /🇭🇰|香港|(?<![A-Za-z])HK(?![A-Za-z])|Hong\s*Kong|🇲🇴|澳門|澳门|(?<![A-Za-z])MO(?![A-Za-z])|Macao|Macau|🇹🇼|台灣|台湾|台北|高雄|(?<![A-Za-z])TW(?![A-Za-z])|Taiwan|🇰🇷|韓國|韩国|首爾|首尔|(?<![A-Za-z])KR(?![A-Za-z])|Korea|Seoul|🇸🇬|新加坡|獅城|狮城|(?<![A-Za-z])SG(?![A-Za-z])|Singapore|🇲🇾|馬來西亞|马来西亚|大馬|大马|(?<![A-Za-z])MY(?![A-Za-z])|Malaysia|🇹🇭|泰國|泰国|曼谷|(?<![A-Za-z])TH(?![A-Za-z])|Thailand|Bangkok|🇻🇳|越南|(?<![A-Za-z])VN(?![A-Za-z])|Vietnam|🇵🇭|菲律賓|菲律宾|馬尼拉|马尼拉|(?<![A-Za-z])PH(?![A-Za-z])|Philippines|Manila|🇮🇩|印度尼西亞|印度尼西亚|印尼|雅加達|雅加达|(?<![A-Za-z])ID(?![A-Za-z])|Indonesia|Jakarta|🇧🇳|汶萊|文莱|(?<![A-Za-z])BN(?![A-Za-z])|Brunei|🇰🇭|柬埔寨|(?<![A-Za-z])KH(?![A-Za-z])|Cambodia|🇱🇦|寮國|寮国|老撾|老挝|(?<![A-Za-z])LA(?![A-Za-z])|Laos|🇲🇲|緬甸|缅甸|(?<![A-Za-z])MM(?![A-Za-z])|Myanmar|Burma/i,
         icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Macao.png",
     },
-
+    {
+        name: "香港",
+        regex: /🇭🇰|港|HK|[Hh]ong\s*[Kk]ong/,
+        icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Hong_Kong.png",
+    },
     {
         name: "日本",
         regex: /🇯🇵|日本|JP|[Jj]apan/,
         icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Japan.png",
     },
-
     {
         name: "美国",
         regex: /🇺🇸|美|US|[Aa]merica|[Uu]nited\s*[Ss]tates/,
         icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/United_States.png",
     },
-
     {
         name: "新加坡",
         regex: /🇸🇬|新加坡|狮城|SG|[Ss]ingapore/,
         icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Singapore.png",
     },
-
-    {
-        name: "台湾",
-        regex: /🇹🇼|台湾|TW|[Tt]aiwan/,
-        icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Taiwan.png",
-    },
-
     {
         name: "低倍率节点",
         regex: /^(?!.*(?:剩|期|客户端|软件)).*(?:(?<!\d)0\.[0-5]|下载|低倍)/,
         icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Available_1.png",
     },
-
     {
         name: "高倍率节点",
         regex:
