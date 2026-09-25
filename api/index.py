@@ -2,25 +2,23 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-
-@app.get("/")
+@app.get("/api")
 def home():
     return {
-        "status": "ok"
+        "status": "ok",
+        "route": "/api"
     }
 
-
-@app.get("/test")
+@app.get("/api/test")
 def test():
     return {
         "status": "ok",
-        "route": "/test"
+        "route": "/api/test"
     }
 
-
-@app.get("/gensub")
+@app.get("/api/gensub")
 def gensub():
     return {
         "status": "ok",
-        "route": "/gensub"
+        "route": "/api/gensub"
     }
