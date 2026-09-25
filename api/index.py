@@ -1,25 +1,60 @@
 import os
 import requests
-from flask import Flask, request, Response, jsonify
+
+from flask import (
+    Flask,
+    request,
+    Response,
+    jsonify,
+)
 
 app = Flask(__name__)
 
-RELAY_KEY = os.getenv("RELAY_KEY")
-B_SUB_URL = os.getenv("B_SUB_URL")
+
+@app.get("/api")
+def home():
+    return jsonify({
+        "status": "ok",
+        "service": "vercel-python",
+    })
+
+
+@app.get("/api/test")
+def test():
+    return jsonify({
+        "status": "ok",
+        "route": "/api/test",
+        "relay_key_configured": bool(
+            os.getenv("RELAY_KEY")
+        ),
+        "b_sub_url_configured": bool(
+            os.getenv("B_SUB_URL")
+        ),
+    })
 
 
 @app.get("/api/gensub")
 def gensub():
+    relay_key = os.getenv("RELAY_KEY")
+    b_sub_url = os.getenv("B_SUB_URL")
+
     key = request.args.get("key")
 
-    if not RELAY_KEY or key != RELAY_KEY:
-        return Response(
-            "Not Found",
-            status=404,
-            content_type="text/plain",
-        )
+    if not relay_key:
+        return jsonify({
+            "status": "error",
+            "type": "config_error",
+            "message": "RELAY_KEY is not configured",
+        }), 500
 
-    if not B_SUB_URL:
+    if key != relay_key:
+        return jsonify({
+            "status": "error",
+            "type": "auth_error",
+            "message": "Invalid relay key",
+        }), 401
+
+    if not b_sub_url:
         return jsonify({
             "status": "error",
             "type": "config_error",
@@ -28,7 +63,7 @@ def gensub():
 
     try:
         r = requests.get(
-            B_SUB_URL,
+            b_sub_url,
             headers={
                 "User-Agent": "mihomo",
                 "Accept": "*/*",
@@ -42,20 +77,25 @@ def gensub():
         )
 
         response.headers["Content-Type"] = (
-            r.headers.get("Content-Type")
-            or "text/plain; charset=utf-8"
-        )
-
-        response.headers["Cache-Control"] = "no-store"
-
-        response.headers["X-Upstream-Status"] = str(
-            r.status_code
-        )
-
-        if "cf-ray" in r.headers:
-            response.headers["X-Upstream-CF-Ray"] = (
-                r.headers["cf-ray"]
+            r.headers.get(
+                "Content-Type"
             )
+            or
+            "text/plain; charset=utf-8"
+        )
+
+        response.headers[
+            "Cache-Control"
+        ] = "no-store"
+
+        response.headers[
+            "X-Upstream-Status"
+        ] = str(r.status_code)
+
+        if r.headers.get("cf-ray"):
+            response.headers[
+                "X-Upstream-CF-Ray"
+            ] = r.headers["cf-ray"]
 
         return response
 
@@ -63,7 +103,7 @@ def gensub():
         return jsonify({
             "status": "error",
             "type": "timeout",
-            "message": "Upstream request timed out",
+            "message": "Upstream timeout",
         }), 502
 
     except Exception as e:
@@ -72,11 +112,3 @@ def gensub():
             "type": "fetch_error",
             "message": str(e),
         }), 502
-
-
-@app.get("/api/test")
-def test():
-    return jsonify({
-        "status": "ok",
-        "service": "gensub",
-    })
