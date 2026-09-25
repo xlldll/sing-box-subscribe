@@ -33,7 +33,7 @@ const cAirportDefinition = {
 const residentialProxyDefinition = {
     name: "家宽",
     regex: /家宽|家寬|家庭宽带|家庭寬頻|住宅(?:IP|网络|網路)?|residential|home\s*(?:ip|broadband)/i,
-    icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Home.png",
+    icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Xbox.png",
 };
 
 function isCAirportProxy(proxy) {
@@ -906,7 +906,7 @@ function main(config) {
             : []),
         ...normalBaseGroupNames,
     ];
-
+    // 順序
     functionalGroups.push({
         ...selectBaseOption,
         name: "默认代理",
@@ -927,16 +927,14 @@ function main(config) {
 
                 icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Rocket.png",
             },
-
-            {
-                ...urlTestBaseOption,
-                name: "自动选择",
-                proxies: regularProxyNames,
-            },
-
             {
                 ...loadBalanceBaseOption,
                 name: "负载均衡",
+                proxies: regularProxyNames,
+            },
+            {
+                ...urlTestBaseOption,
+                name: "自动选择",
                 proxies: regularProxyNames,
             },
         );
@@ -1018,7 +1016,6 @@ function main(config) {
             proxies: ["默认代理", "直连"],
             icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Stack.png",
         },
-
         {
             ...selectBaseOption,
             name: "直连",
@@ -1035,16 +1032,13 @@ function main(config) {
     const globalGroup = {
         ...selectBaseOption,
         name: "GLOBAL",
-
         proxies: [
-            ...functionalGroups.map(
-                (group) => group.name,
-            ),
-
             ...residentialGroups.map(
                 (group) => group.name,
             ),
-
+            ...functionalGroups.map(
+                (group) => group.name,
+            ),
             ...generatedRegionGroups.map(
                 (group) => group.name,
             ),
