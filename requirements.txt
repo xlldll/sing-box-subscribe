@@ -5,3 +5,4 @@ chardet
 pyyaml
 ruamel.yaml
 flask==2.3.2
+fastapi
