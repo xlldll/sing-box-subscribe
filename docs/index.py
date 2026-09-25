@@ -45,14 +45,11 @@ def api():
 
 
 def handle_gensub():
-    relay_key =
-        os.getenv("RELAY_KEY")
+    relay_key = os.getenv("RELAY_KEY")
 
-    b_sub_url =
-        os.getenv("B_SUB_URL")
+    b_sub_url = os.getenv("B_SUB_URL")
 
-    key =
-        request.args.get("key")
+    key =request.args.get("key")
 
     if not relay_key:
         return jsonify({
@@ -79,8 +76,7 @@ def handle_gensub():
         }), 500
 
     try:
-        r =
-            requests.get(
+        r =requests.get(
                 b_sub_url,
                 headers={
                     "User-Agent": "mihomo",
@@ -89,8 +85,7 @@ def handle_gensub():
                 timeout=15,
             )
 
-        response =
-            Response(
+        response = Response(
                 r.content,
                 status=r.status_code,
             )
