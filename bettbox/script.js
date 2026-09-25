@@ -254,7 +254,7 @@ const loadBalanceBaseOption = {
 const serviceConfigs = [
     {
         name: "AI",
-        defaultSelected: "台灣",
+        defaultSelected: "台湾",
         preferResidential: true,
         providers: {
             ai: {
