@@ -214,120 +214,457 @@ function parseUriList(text) {
 
 function parseVless(uri) {
     const url = new URL(uri);
-    const p = url.searchParams;
 
-    const network = (p.get("type") || "tcp").toLowerCase();
-    const security = (p.get("security") || "").toLowerCase();
+    if (!url.username || !url.hostname || !url.port) {
+        throw new Error("Invalid VLESS URI");
+    }
+
+    const q = url.searchParams;
+
+    const get = (...keys) => {
+        for (const key of keys) {
+            const value = q.get(key);
+
+            if (value != null && value !== "") {
+                return value;
+            }
+        }
+
+        return null;
+    };
+
+    const bool = (...keys) => {
+        const value = get(...keys);
+
+        return value != null &&
+            /^(1|true|yes)$/i.test(value);
+    };
+
+    const network = (
+        get("type", "network") ||
+        "tcp"
+    ).toLowerCase();
+
+    const security = (
+        get("security") ||
+        ""
+    ).toLowerCase();
 
     const proxy = {
         name: nodeName(url),
         type: "vless",
         server: url.hostname,
-        port: port(url.port),
+        port: parsePort(url.port),
         uuid: decodeURIComponent(url.username),
         udp: true
     };
 
-    const flow = p.get("flow");
-    if (flow) proxy.flow = flow;
+    // VLESS flow
+    const flow = get("flow");
 
-    const encryption = p.get("encryption");
-    if (encryption) proxy.encryption = encryption;
+    if (flow) {
+        proxy.flow = flow;
+    }
 
-    const packetEncoding =
-        p.get("packetEncoding") ||
-        p.get("packet-encoding");
+    // VLESS encryption
+    const encryption = get("encryption");
+
+    if (encryption) {
+        proxy.encryption = encryption;
+    }
+
+    // UDP packet encoding
+    const packetEncoding = get(
+        "packetEncoding",
+        "packet-encoding"
+    );
 
     if (packetEncoding) {
         proxy["packet-encoding"] = packetEncoding;
     }
 
-    if (security === "tls" || security === "reality") {
+    // TLS / Reality
+    if (
+        security === "tls" ||
+        security === "reality"
+    ) {
         proxy.tls = true;
-    }
 
-    const sni = p.get("sni");
-    if (sni) proxy.servername = sni;
+        const sni = get(
+            "sni",
+            "serverName",
+            "servername"
+        );
 
-    const fp = p.get("fp");
-    if (fp) proxy["client-fingerprint"] = fp;
+        if (sni && sni !== "none") {
+            proxy.servername = sni;
+        }
 
-    if (/^(?:1|true)$/i.test(p.get("insecure") || "")) {
-        proxy["skip-cert-verify"] = true;
-    }
+        const fingerprint = get(
+            "fp",
+            "client-fingerprint",
+            "fingerprint"
+        );
 
-    if (security === "reality") {
-        const publicKey = p.get("pbk");
-        const shortId = p.get("sid");
+        if (fingerprint) {
+            proxy["client-fingerprint"] =
+                fingerprint;
+        }
 
-        if (publicKey) {
-            proxy["reality-opts"] = {
-                "public-key": publicKey
-            };
+        if (
+            bool(
+                "allowInsecure",
+                "insecure",
+                "skip-cert-verify"
+            )
+        ) {
+            proxy["skip-cert-verify"] = true;
+        }
 
-            if (shortId) {
-                proxy["reality-opts"]["short-id"] = shortId;
-            }
+        const alpn = get("alpn");
+
+        if (alpn) {
+            proxy.alpn = alpn
+                .split(",")
+                .map(v => v.trim())
+                .filter(Boolean);
         }
     }
 
-    if (network !== "tcp" && network !== "none") {
+    // Reality
+    if (security === "reality") {
+        const publicKey = get(
+            "pbk",
+            "publicKey",
+            "public-key"
+        );
+
+        if (!publicKey) {
+            throw new Error(
+                "Reality VLESS missing public key"
+            );
+        }
+
+        proxy["reality-opts"] = {
+            "public-key": publicKey
+        };
+
+        const shortId = get(
+            "sid",
+            "shortId",
+            "short-id"
+        );
+
+        if (shortId) {
+            proxy["reality-opts"]["short-id"] =
+                shortId;
+        }
+    }
+
+    // Transport
+    if (
+        ["ws", "http", "h2", "grpc", "xhttp"]
+            .includes(network)
+    ) {
         proxy.network = network;
     }
 
+    // WebSocket
     if (network === "ws") {
-        const ws = {};
+        const path =
+            get("path") ||
+            "/";
 
-        const wsPath = p.get("path");
-        const host = p.get("host");
+        const host = get(
+            "host",
+            "sni"
+        );
 
-        if (wsPath) ws.path = wsPath;
-        if (host) ws.headers = { Host: host };
+        const wsOpts = {
+            path: cleanWsPath(path)
+        };
 
-        if (Object.keys(ws).length) {
-            proxy["ws-opts"] = ws;
+        if (host && host !== "none") {
+            wsOpts.headers = {
+                Host: host
+            };
+        }
+
+        const earlyData =
+            extractWsEarlyData(path) ??
+            toPositiveInt(
+                get(
+                    "ed",
+                    "maxEarlyData",
+                    "max-early-data"
+                )
+            );
+
+        if (earlyData) {
+            wsOpts["max-early-data"] =
+                earlyData;
+
+            wsOpts[
+                "early-data-header-name"
+            ] =
+                get(
+                    "eh",
+                    "earlyDataHeaderName",
+                    "early-data-header-name"
+                ) ||
+                "Sec-WebSocket-Protocol";
+        }
+
+        proxy["ws-opts"] = wsOpts;
+    }
+
+    // gRPC
+    if (network === "grpc") {
+        const serviceName = get(
+            "serviceName",
+            "service-name"
+        );
+
+        const grpcOpts = {};
+
+        if (serviceName) {
+            grpcOpts["grpc-service-name"] =
+                serviceName;
+        }
+
+        if (bool("multiMode", "multi-mode")) {
+            grpcOpts["grpc-use-tls"] = true;
+        }
+
+        if (Object.keys(grpcOpts).length) {
+            proxy["grpc-opts"] = grpcOpts;
         }
     }
 
-    if (network === "grpc") {
-        const service =
-            p.get("serviceName") ||
-            p.get("service-name");
+    // HTTP / H2
+    if (
+        network === "http" ||
+        network === "h2"
+    ) {
+        const path =
+            get("path") ||
+            "/";
 
-        if (service) {
-            proxy["grpc-opts"] = {
-                "grpc-service-name": service
-            };
+        const host =
+            get("host");
+
+        const h2Opts = {
+            path
+        };
+
+        if (host) {
+            h2Opts.host = host
+                .split(",")
+                .map(v => v.trim())
+                .filter(Boolean);
+        }
+
+        proxy["h2-opts"] = h2Opts;
+    }
+
+    // XHTTP
+    if (network === "xhttp") {
+        const xhttpOpts = {};
+
+        const path = get("path");
+        const host = get("host");
+        const mode = get("mode");
+
+        if (path) {
+            xhttpOpts.path = path;
+        }
+
+        if (host) {
+            xhttpOpts.host = host;
+        }
+
+        if (mode) {
+            xhttpOpts.mode = mode;
+        }
+
+        if (Object.keys(xhttpOpts).length) {
+            proxy["xhttp-opts"] =
+                xhttpOpts;
+        }
+    }
+
+    // Mihomo SMUX
+    const muxProtocol =
+        get(
+            "protocol",
+            "mux",
+            "smux"
+        );
+
+    if (muxProtocol) {
+        proxy.smux = {
+            enabled: true,
+            protocol: muxProtocol
+        };
+
+        const maxStreams =
+            toNonNegativeInt(
+                get(
+                    "max_streams",
+                    "maxStreams"
+                )
+            );
+
+        const minStreams =
+            toNonNegativeInt(
+                get(
+                    "min_streams",
+                    "minStreams"
+                )
+            );
+
+        const maxConnections =
+            toNonNegativeInt(
+                get(
+                    "max_connections",
+                    "maxConnections"
+                )
+            );
+
+        if (maxStreams != null) {
+            proxy.smux["max-streams"] =
+                maxStreams;
+        }
+
+        if (minStreams != null) {
+            proxy.smux["min-streams"] =
+                minStreams;
+        }
+
+        if (maxConnections != null) {
+            proxy.smux["max-connections"] =
+                maxConnections;
+        }
+
+        if (bool("padding")) {
+            proxy.smux.padding = true;
         }
     }
 
     return proxy;
 }
 
+function cleanWsPath(path) {
+    if (!path) {
+        return "/";
+    }
+
+    return path.replace(
+        /[?&]ed=\d+.*$/i,
+        ""
+    ) || "/";
+}
+
+function extractWsEarlyData(path) {
+    if (!path) {
+        return null;
+    }
+
+    const match =
+        path.match(
+            /(?:[?&])ed=(\d+)/i
+        );
+
+    return match
+        ? toPositiveInt(match[1])
+        : null;
+}
+
+function toPositiveInt(value) {
+    if (value == null) {
+        return null;
+    }
+
+    const n = Number(value);
+
+    return Number.isInteger(n) &&
+        n > 0
+        ? n
+        : null;
+}
+
+function toNonNegativeInt(value) {
+    if (value == null) {
+        return null;
+    }
+
+    const n = Number(value);
+
+    return Number.isInteger(n) &&
+        n >= 0
+        ? n
+        : null;
+}
+
 function parseAnyTLS(uri) {
     const url = new URL(uri);
-    const p = url.searchParams;
+
+    if (
+        url.protocol !== "anytls:" ||
+        !url.username ||
+        !url.hostname ||
+        !url.port
+    ) {
+        throw new Error("Invalid AnyTLS URI");
+    }
+
+    const q = url.searchParams;
 
     const proxy = {
         name: nodeName(url),
         type: "anytls",
         server: url.hostname,
-        port: port(url.port),
+        port: parsePort(url.port),
         password: decodeURIComponent(url.username),
         udp: true
     };
 
-    const sni = p.get("sni");
-    if (sni) proxy.sni = sni;
+    const sni = getParam(
+        q,
+        "sni",
+        "host",
+        "serverName",
+        "servername"
+    );
 
-    const fp = p.get("fp");
-    if (fp) proxy["client-fingerprint"] = fp;
+    if (sni && sni !== "none") {
+        proxy.sni = sni;
+    }
 
-    if (/^(?:1|true)$/i.test(p.get("insecure") || "")) {
+    const fingerprint = getParam(
+        q,
+        "fp",
+        "client-fingerprint",
+        "fingerprint"
+    );
+
+    if (fingerprint) {
+        proxy["client-fingerprint"] =
+            fingerprint;
+    }
+
+    if (
+        getBoolParam(
+            q,
+            "allowInsecure",
+            "insecure",
+            "skip-cert-verify"
+        )
+    ) {
         proxy["skip-cert-verify"] = true;
     }
 
-    const alpn = p.get("alpn");
+    const alpn = getParam(q, "alpn");
 
     if (alpn) {
         proxy.alpn = alpn
@@ -337,6 +674,28 @@ function parseAnyTLS(uri) {
     }
 
     return proxy;
+}
+
+function getParam(params, ...keys) {
+    for (const key of keys) {
+        const value = params.get(key);
+
+        if (value != null && value !== "") {
+            return value;
+        }
+    }
+
+    return null;
+}
+
+function getBoolParam(params, ...keys) {
+    const value = getParam(
+        params,
+        ...keys
+    );
+
+    return value != null &&
+        /^(1|true|yes)$/i.test(value);
 }
 
 function nodeName(url) {
