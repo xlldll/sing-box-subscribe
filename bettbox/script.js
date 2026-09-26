@@ -1442,7 +1442,7 @@ function main(config) {
         if (proxy.name === "[M] 家宽-Chicken") {
             return {
                 ...proxy,
-                "dialer-proxy": "[A] 🇨🇳台湾•移联01",
+                "dialer-proxy": "链式前置",
             };
         }
 
