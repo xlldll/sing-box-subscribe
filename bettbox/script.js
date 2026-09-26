@@ -32,7 +32,7 @@ const cAirportDefinition = {
 
 const residentialProxyDefinition = {
     name: "家宽",
-    regex: /家宽|家寬|家庭宽带|家庭寬頻|住宅(?:IP|网络|網路)?|residential|home\s*(?:ip|broadband)/i,
+    regex: /家宽|家寬|家庭宽带|家庭寬頻|住宅(?:IP|网络|網路|寬頻|宽带)?|原生住宅|住宅原生|residential|residential\s*ip|home\s*(?:ip|broadband)|isp\s*ip/i,
     icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Xbox.png",
 };
 
@@ -785,7 +785,7 @@ function main(config) {
 
         filteredProxies.push(proxy);
 
-        if (isC && isResidential) {
+        if (isResidential) {
             residentialProxies.push(proxy);
         } else {
             regularProxies.push(proxy);
