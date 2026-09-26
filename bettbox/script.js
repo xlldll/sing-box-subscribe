@@ -1436,7 +1436,7 @@ function main(config) {
      * 最终代理节点
      *
      * 在最终输出阶段，才给 Chicken 注入 dialer-proxy。
-     * 避免源订阅阶段就引用尚未生成的「链式前置」组。.
+     * 避免源订阅阶段就引用尚未生成的「链式前置」组
      */
     const finalProxies = filteredProxies.map((proxy) => {
         if (proxy.name === "[M] 家宽-Chicken") {
