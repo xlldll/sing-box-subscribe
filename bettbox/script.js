@@ -64,6 +64,7 @@ const rules = [
     "DOMAIN,international-gfe.download.nvidia.com,直连",
     "DOMAIN-SUFFIX,tuotuoyun.us,直连",
     "DOMAIN-SUFFIX,tuotuoyun.vip,直连",
+    "DOMAIN-SUFFIX,ipsuper.com,敏感代理组",
 ];
 
 const regionDefinitions = [
