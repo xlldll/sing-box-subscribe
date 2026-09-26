@@ -902,6 +902,29 @@ function main(config) {
         ? ["手动选择", "自动选择", "负载均衡"]
         : [];
 
+    /**
+     * 链式前置
+     *
+     * 专门给家宽落地节点作为 dialer-proxy 使用。
+     * 这里只允许普通机场节点相关组，
+     * 不包含“家宽”和“敏感代理组”，避免循环依赖。
+     */
+    if (hasRegularProxies) {
+        functionalGroups.push({
+            ...selectBaseOption,
+
+            name: "链式前置",
+
+            proxies: [
+                ...groupNamesOfSelect,
+                ...normalBaseGroupNames,
+            ],
+
+            icon:
+                "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png",
+        });
+    }
+
     const defaultProxyCandidates = [
         ...groupNamesOfSelect,
 
@@ -926,8 +949,6 @@ function main(config) {
         icon:
             "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png",
     });
-
-
     /*
      * 敏感代理组
      *
