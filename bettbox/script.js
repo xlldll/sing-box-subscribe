@@ -49,6 +49,13 @@ function isCAirportProxy(proxy) {
 }
 
 const rules = [
+    "DOMAIN-SUFFIX,ipsuper.com,敏感代理组",
+    "DOMAIN-SUFFIX,ipwhois.io,敏感代理组",
+    "DOMAIN-SUFFIX,ippure.com,敏感代理组",
+    "DOMAIN-SUFFIX,ping0.cc,敏感代理组",
+    "DOMAIN-SUFFIX,ip2location.com,敏感代理组",
+    "DOMAIN-SUFFIX,db-ip.com,敏感代理组",
+
     "AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((RULE-SET,cn_additional),(RULE-SET,cn_ip,no-resolve)))))),REJECT",
 
     "RULE-SET,private,直连",
@@ -64,7 +71,6 @@ const rules = [
     "DOMAIN,international-gfe.download.nvidia.com,直连",
     "DOMAIN-SUFFIX,tuotuoyun.us,直连",
     "DOMAIN-SUFFIX,tuotuoyun.vip,直连",
-    "DOMAIN-SUFFIX,ipsuper.com,敏感代理组",
 ];
 
 const regionDefinitions = [
