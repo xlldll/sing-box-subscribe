@@ -552,7 +552,7 @@ function isResidentialProxy(proxy) {
 }
 //必須是家寬節點+名稱包含 Relay
 function isRelayProxy(proxy) {
-    return isResidentialProxy(proxy) && /relay/i.test(String(proxy?.name || ""));
+    return isResidentialProxy(proxy) && /relay12/i.test(String(proxy?.name || ""));
 }
 /* =========================
  * 14. 區域 Group
