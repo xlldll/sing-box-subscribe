@@ -846,21 +846,20 @@ function buildFinalProxies(filteredProxies, relayPlan, hasRegularProxies) {
 /* =========================
  * 20. Proxy Groups
  * ========================= */
-function buildMTestGroups(relayPlan) {
+function buildMTestGroups(residentialProxies, relayPlan) {
     if (!SETTINGS.enableMTestGroups) {
         return [];
     }
-    // 取第一個已識別出的 M 原始家寬節點。
-    const directName = [...relayPlan.sourceNames][0];
-    if (!directName) {
+    const sourceProxy = residentialProxies.find((proxy) => isMResidentialProxy(proxy));
+    if (!sourceProxy) {
         return [];
     }
+    const directName = sourceProxy.name;
     const groups = [
         selectGroup(GROUP.M_TEST_DIRECT, [directName], {
             icon: ICON.residential,
         }),
     ];
-    // 找到與該直連 M 節點一一對應的 Relay。
     const relayName = relayPlan.relayNameBySource.get(directName);
     if (relayName && relayPlan.relayNames.includes(relayName)) {
         groups.push(
@@ -891,8 +890,7 @@ function buildProxyGroups({ regularProxies, residentialProxies, regionGroups, re
      * 不參與正常代理選擇，
      * 僅供手動測速與故障診斷。
      */
-    const mTestGroups = buildMTestGroups(relayPlan);
-    /*
+    const mTestGroups = buildMTestGroups(residentialProxies, relayPlan); /*
      * 链式前置
      *
      * 只允許普通機場節點。
@@ -1027,6 +1025,7 @@ function buildProxyGroups({ regularProxies, residentialProxies, regionGroups, re
     const globalGroup = selectGroup(
         GROUP.GLOBAL,
         unique([
+            ...mTestGroups.map((group) => group.name),
             GROUP.SENSITIVE,
             ...residentialGroups.map((group) => group.name),
             ...functionalGroups.map((group) => group.name),
@@ -1037,7 +1036,14 @@ function buildProxyGroups({ regularProxies, residentialProxies, regionGroups, re
         },
     );
     return {
-        proxyGroups: [...mTestGroups, sensitiveGroup, globalGroup, ...functionalGroups, ...residentialGroups, ...regionGroups],
+        proxyGroups: [
+            ...mTestGroups.map((group) => group.name),
+            sensitiveGroup,
+            globalGroup,
+            ...functionalGroups,
+            ...residentialGroups,
+            ...regionGroups,
+        ],
         finalRules,
         finalRuleProviders,
     };
