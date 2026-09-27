@@ -251,7 +251,7 @@ const BASE_RULES = [
 const SERVICE_CONFIGS = [
     {
         name: "AI",
-        defaultSelected: "台湾",
+        defaultSelected: "敏感代理组",
         preferResidential: true,
         providers: {
             ai: metaDomain("category-ai-!cn", "ai", "category-ai-!cn"),
@@ -261,7 +261,7 @@ const SERVICE_CONFIGS = [
     },
     {
         name: "Facebook",
-        defaultSelected: "台湾",
+        defaultSelected: "敏感代理组",
         preferResidential: true,
         providers: {
             facebook: metaDomain("facebook"),
@@ -279,7 +279,7 @@ const SERVICE_CONFIGS = [
     },
     {
         name: "GoogleAccount",
-        defaultSelected: "台湾",
+        defaultSelected: "敏感代理组",
         preferResidential: true,
         providers: {},
         icon: ICON.google,
@@ -291,7 +291,7 @@ const SERVICE_CONFIGS = [
     },
     {
         name: "MicrosoftAccount",
-        defaultSelected: "台湾",
+        defaultSelected: "敏感代理组",
         preferResidential: true,
         providers: {},
         icon: ICON.microsoft,
@@ -304,7 +304,7 @@ const SERVICE_CONFIGS = [
     },
     {
         name: "AppleID",
-        defaultSelected: "台湾",
+        defaultSelected: "敏感代理组",
         preferResidential: true,
         providers: {},
         icon: ICON.apple,
