@@ -26,7 +26,9 @@ const SETTINGS = {
         Spotify: false,
         AdBlock: false,
     },
+    // 每一個家寬節點生成一個獨立測試組
     excludeHighRateProxies: false,
+    enableResidentialTestGroups: true,
     healthCheck: {
         interval: 1800,
         timeout: 15000,
@@ -566,6 +568,16 @@ function createRegionGroups(name, icon, proxies) {
         }),
     ];
 }
+function buildResidentialTestGroups(residentialProxies) {
+    if (!SETTINGS.enableResidentialTestGroups) {
+        return [];
+    }
+    return residentialProxies.map((proxy) =>
+        selectGroup(`🧪 ${proxy.name}`, [proxy.name], {
+            icon: ICON.residential,
+        }),
+    );
+}
 /* =========================
  * 15. Domain pattern
  * ========================= */
@@ -756,6 +768,7 @@ function buildProxyGroups({ regularProxies, residentialProxies, regionGroups }) 
     const regionSelectNames = regionGroups.filter((group) => group.type === "select").map((group) => group.name);
     const normalBaseGroupNames = hasRegular ? [GROUP.MANUAL, GROUP.AUTO, GROUP.BALANCE] : [];
     const functionalGroups = [];
+    const residentialTestGroups = buildResidentialTestGroups(residentialProxies);
     /**
      * 链式前置
      *
@@ -889,6 +902,7 @@ function buildProxyGroups({ regularProxies, residentialProxies, regionGroups }) 
     const globalGroup = selectGroup(
         GROUP.GLOBAL,
         unique([
+            ...residentialTestGroups.map((group) => group.name),
             GROUP.SENSITIVE,
             ...residentialGroups.map((group) => group.name),
             ...functionalGroups.map((group) => group.name),
@@ -899,7 +913,7 @@ function buildProxyGroups({ regularProxies, residentialProxies, regionGroups }) 
         },
     );
     return {
-        proxyGroups: [sensitiveGroup, globalGroup, ...functionalGroups, ...residentialGroups, ...regionGroups],
+        proxyGroups: [...residentialTestGroups, sensitiveGroup, globalGroup, ...functionalGroups, ...residentialGroups, ...regionGroups],
         finalRules,
         finalRuleProviders,
     };
