@@ -811,6 +811,20 @@ function main(config) {
     const regularProxyNames =
         regularProxies.map((proxy) => proxy.name);
 
+    /**
+     * M 自建家宽节点
+     *
+     * 原节点作为 IPv6 直连使用；
+     * 额外生成一个经「链式前置」访问的 Relay 版本。
+     */
+    const mChickenSourceName = "[M] 家宽-Chicken";
+
+    const mChickenRelayName =
+        "[M] 家宽|Relay";
+
+    const hasMChicken =
+        residentialProxyNames.includes(mChickenSourceName);
+
     const hasResidentialProxies =
         residentialProxyNames.length > 0;
 
@@ -879,9 +893,21 @@ function main(config) {
         ? [
             {
                 ...selectBaseOption,
+
                 name: residentialProxyDefinition.name,
+
                 icon: residentialProxyDefinition.icon,
-                proxies: residentialProxyNames,
+
+                proxies: [
+                    ...residentialProxyNames,
+
+                    ...(
+                        hasMChicken &&
+                            hasRegularProxies
+                            ? [mChickenRelayName]
+                            : []
+                    ),
+                ],
             },
         ]
         : [];
@@ -905,9 +931,8 @@ function main(config) {
     /**
      * 链式前置
      *
-     * 专门给家宽落地节点作为 dialer-proxy 使用。
-     * 这里只允许普通机场节点相关组，
-     * 不包含“家宽”和“敏感代理组”，避免循环依赖。
+     * 只允许普通机场节点。
+     * 严禁包含任何家宽节点，避免循环依赖。
      */
     if (hasRegularProxies) {
         functionalGroups.push({
@@ -916,8 +941,7 @@ function main(config) {
             name: "链式前置",
 
             proxies: [
-                ...groupNamesOfSelect,
-                ...normalBaseGroupNames,
+                ...regularProxyNames,
             ],
 
             icon:
@@ -989,6 +1013,12 @@ function main(config) {
                 proxies: [
                     ...regularProxyNames,
                     ...residentialProxyNames,
+                    ...(
+                        hasMChicken &&
+                            hasRegularProxies
+                            ? [mChickenRelayName]
+                            : []
+                    ),
                 ],
 
                 icon:
@@ -1435,18 +1465,46 @@ function main(config) {
     /**
      * 最终代理节点
      *
-     * 在最终输出阶段，才给 Chicken 注入 dialer-proxy。
-     * 避免源订阅阶段就引用尚未生成的「链式前置」组
+     * M Chicken 自动生成两个版本：
+     *
+     * 1. 原节点
+     *    IPv6 直连 Chicken
+     *
+     * 2. Relay 节点
+     *    通过「链式前置」连接 Chicken
      */
-    const finalProxies = filteredProxies.map((proxy) => {
-        if (proxy.name === "[M] 家宽-Chicken") {
-            return {
-                ...proxy,
-                "dialer-proxy": "链式前置",
-            };
+    const finalProxies = filteredProxies.flatMap((proxy) => {
+
+        if (proxy.name !== mChickenSourceName) {
+            return [proxy];
         }
 
-        return proxy;
+        const directProxy = {
+            ...proxy,
+        };
+
+        /**
+         * 确保源订阅即使意外带有 dialer-proxy，
+         * IPv6 直连版本也不会继承。
+         */
+        delete directProxy["dialer-proxy"];
+
+        if (!hasRegularProxies) {
+            return [directProxy];
+        }
+
+        const relayProxy = {
+            ...proxy,
+
+            name: mChickenRelayName,
+
+            "dialer-proxy": "链式前置",
+        };
+
+        return [
+            directProxy,
+            relayProxy,
+        ];
     });
 
     newConfig["proxies"] = [
