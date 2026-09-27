@@ -38,12 +38,17 @@ const SETTINGS = {
         enabled: true,
         providerPrefix: "[M]",
     },
+    // 是否生成兩個 M 專用測試組：
+    // 1. M直连测试 → 只有一個 M 原始直連節點
+    // 2. MRelay测试 → 只有對應的一個 M Relay 節點
+    enableMTestGroups: true,
     healthCheck: {
         interval: 1800,
-        timeout: 3000,
+        timeout: 15000,
         url: "https://g.cn/generate_204",
         lazy: true,
-        maxFailedTimes: 2,
+        "max-failed-times": 3,
+        "empty-fallback": "REJECT",
     },
 };
 /* =========================
@@ -54,6 +59,8 @@ const GROUP = {
     SENSITIVE: "敏感代理组",
     RESIDENTIAL: "家宽",
     RELAY: "链式前置",
+    M_TEST_DIRECT: "🧪 M直连测试",
+    M_TEST_RELAY: "🧪 MRelay测试",
     MANUAL: "手动选择",
     AUTO: "自动选择",
     BALANCE: "负载均衡",
@@ -839,6 +846,31 @@ function buildFinalProxies(filteredProxies, relayPlan, hasRegularProxies) {
 /* =========================
  * 20. Proxy Groups
  * ========================= */
+function buildMTestGroups(relayPlan) {
+    if (!SETTINGS.enableMTestGroups) {
+        return [];
+    }
+    // 取第一個已識別出的 M 原始家寬節點。
+    const directName = [...relayPlan.sourceNames][0];
+    if (!directName) {
+        return [];
+    }
+    const groups = [
+        selectGroup(GROUP.M_TEST_DIRECT, [directName], {
+            icon: ICON.residential,
+        }),
+    ];
+    // 找到與該直連 M 節點一一對應的 Relay。
+    const relayName = relayPlan.relayNameBySource.get(directName);
+    if (relayName && relayPlan.relayNames.includes(relayName)) {
+        groups.push(
+            selectGroup(GROUP.M_TEST_RELAY, [relayName], {
+                icon: ICON.residential,
+            }),
+        );
+    }
+    return groups;
+}
 function buildProxyGroups({ regularProxies, residentialProxies, regionGroups, relayPlan }) {
     const regularNames = unique(regularProxies.map((proxy) => proxy.name));
     const residentialNames = unique([...residentialProxies.map((proxy) => proxy.name), ...relayPlan.relayNames]);
@@ -847,6 +879,19 @@ function buildProxyGroups({ regularProxies, residentialProxies, regionGroups, re
     const regionSelectNames = regionGroups.filter((group) => group.type === "select").map((group) => group.name);
     const normalBaseGroupNames = hasRegular ? [GROUP.MANUAL, GROUP.AUTO, GROUP.BALANCE] : [];
     const functionalGroups = [];
+    /*
+     * M 專用測試組
+     *
+     * 🧪 M直连测试
+     * → 只有 M 原始直連節點
+     *
+     * 🧪 MRelay测试
+     * → 只有與其對應的 M Relay 節點
+     *
+     * 不參與正常代理選擇，
+     * 僅供手動測速與故障診斷。
+     */
+    const mTestGroups = buildMTestGroups(relayPlan);
     /*
      * 链式前置
      *
@@ -992,7 +1037,7 @@ function buildProxyGroups({ regularProxies, residentialProxies, regionGroups, re
         },
     );
     return {
-        proxyGroups: [sensitiveGroup, globalGroup, ...functionalGroups, ...residentialGroups, ...regionGroups],
+        proxyGroups: [...mTestGroups, sensitiveGroup, globalGroup, ...functionalGroups, ...residentialGroups, ...regionGroups],
         finalRules,
         finalRuleProviders,
     };
