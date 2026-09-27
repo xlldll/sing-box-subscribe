@@ -115,6 +115,7 @@ const INFO_NODE_RE =
 // C
 //
 const C_PROVIDER_RE = /(?:^|[^A-Za-z0-9])C(?:机场|機場)?(?:$|[^A-Za-z0-9])/i;
+const M_PROVIDER_RE = /(?:^|[^A-Za-z0-9])M(?:机场|機場)?(?:$|[^A-Za-z0-9])/i;
 /* =========================
  * 5. 區域定義
  * ========================= */
@@ -554,7 +555,11 @@ function isResidentialProxy(proxy) {
 }
 //必須是家寬節點+名稱包含 Relay
 function isRelayProxy(proxy) {
-    return isResidentialProxy(proxy) && /relay12/i.test(String(proxy?.name || ""));
+    return isResidentialProxy(proxy) && /relay/i.test(String(proxy?.name || ""));
+}
+function isMAirportProxy(proxy) {
+    const text = [proxy?.name, proxy?.provider, proxy?.["provider-name"], proxy?.source, proxy?._provider].filter(Boolean).join(" ");
+    return M_PROVIDER_RE.test(text);
 }
 /* =========================
  * 14. 區域 Group
@@ -572,11 +577,13 @@ function buildResidentialTestGroups(residentialProxies) {
     if (!SETTINGS.enableResidentialTestGroups) {
         return [];
     }
-    return residentialProxies.map((proxy) =>
-        selectGroup(`🧪 ${proxy.name}`, [proxy.name], {
-            icon: ICON.residential,
-        }),
-    );
+    return residentialProxies
+        .filter((proxy) => isMAirportProxy(proxy))
+        .map((proxy) =>
+            selectGroup(`🧪 ${proxy.name}`, [proxy.name], {
+                icon: ICON.residential,
+            }),
+        );
 }
 /* =========================
  * 15. Domain pattern
