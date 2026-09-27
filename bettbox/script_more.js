@@ -1036,14 +1036,7 @@ function buildProxyGroups({ regularProxies, residentialProxies, regionGroups, re
         },
     );
     return {
-        proxyGroups: [
-            ...mTestGroups.map((group) => group.name),
-            sensitiveGroup,
-            globalGroup,
-            ...functionalGroups,
-            ...residentialGroups,
-            ...regionGroups,
-        ],
+        proxyGroups: [...mTestGroups, sensitiveGroup, globalGroup, ...functionalGroups, ...residentialGroups, ...regionGroups],
         finalRules,
         finalRuleProviders,
     };
