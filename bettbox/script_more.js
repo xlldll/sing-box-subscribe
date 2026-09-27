@@ -27,27 +27,12 @@ const SETTINGS = {
         AdBlock: false,
     },
     excludeHighRateProxies: false,
-    // [M] 自建家寬節點自動生成：
-    //
-    // 原節點
-    // → IPv6 直連
-    //
-    // Relay 節點
-    // → dialer-proxy → 链式前置
-    relay: {
-        enabled: true,
-        providerPrefix: "[M]",
-    },
-    // 是否生成兩個 M 專用測試組：
-    // 1. M直连测试 → 只有一個 M 原始直連節點
-    // 2. MRelay测试 → 只有對應的一個 M Relay 節點
-    enableMTestGroups: true,
     healthCheck: {
         interval: 1800,
         timeout: 15000,
         url: "https://g.cn/generate_204",
         lazy: true,
-        "max-failed-times": 3,
+        maxFailedTimes: 3,
         "empty-fallback": "REJECT",
     },
 };
@@ -59,8 +44,6 @@ const GROUP = {
     SENSITIVE: "敏感代理组",
     RESIDENTIAL: "家宽",
     RELAY: "链式前置",
-    M_TEST_DIRECT: "🧪 M直连测试",
-    M_TEST_RELAY: "🧪 MRelay测试",
     MANUAL: "手动选择",
     AUTO: "自动选择",
     BALANCE: "负载均衡",
@@ -567,30 +550,6 @@ function isCAirportProxy(proxy) {
 function isResidentialProxy(proxy) {
     return RESIDENTIAL_RE.test(String(proxy?.name || ""));
 }
-function isMResidentialProxy(proxy) {
-    const name = String(proxy?.name || "");
-    return (
-        SETTINGS.relay.enabled &&
-        name.startsWith(`${SETTINGS.relay.providerPrefix} `) &&
-        isResidentialProxy(proxy) &&
-        !/\|\s*Relay$/i.test(name)
-    );
-}
-/* =========================
- * 13. Relay 命名
- * ========================= */
-function relayName(sourceName) {
-    const prefix = SETTINGS.relay.providerPrefix;
-    let body = sourceName.startsWith(`${prefix} `) ? sourceName.slice(prefix.length + 1) : sourceName;
-    // [M] 家宽-Chicken
-    // →
-    // [M] 家宽|Relay
-    body = body
-        .replace(/-Chicken(?=$|\s|\|)/i, "")
-        .replace(/\s*\|\s*Relay$/i, "")
-        .trim();
-    return `${prefix} ${body}|Relay`;
-}
 /* =========================
  * 14. 區域 Group
  * ========================= */
@@ -748,83 +707,13 @@ function buildRegionGroups(regularProxies) {
     return groups;
 }
 /* =========================
- * 18. M Relay Plan
- * ========================= */
-function buildRelayPlan(residentialProxies, hasRegularProxies) {
-    const relayNameBySource = new Map();
-    if (SETTINGS.relay.enabled) {
-        for (const proxy of residentialProxies) {
-            if (!isMResidentialProxy(proxy)) {
-                continue;
-            }
-            relayNameBySource.set(proxy.name, relayName(proxy.name));
-        }
-    }
-    return {
-        // 即使沒有普通機場節點，
-        // 仍識別 M 原節點。
-        //
-        // 這樣可以移除來源訂閱中
-        // 殘留的 dialer-proxy。
-        sourceNames: new Set(relayNameBySource.keys()),
-        // 沒有普通節點時
-        // 不生成 Relay。
-        relayNames: hasRegularProxies ? [...relayNameBySource.values()] : [],
-        relayNameBySource,
-    };
-}
-/* =========================
  * 19. 最終 Proxy
  * ========================= */
-function buildFinalProxies(filteredProxies, relayPlan, hasRegularProxies) {
-    const result = [];
-    for (const proxy of filteredProxies) {
-        // 非 M 自建家寬。
-        if (!relayPlan.sourceNames.has(proxy.name)) {
-            result.push(proxy);
-            continue;
-        }
-        /*
-         * M 原節點
-         *
-         * IPv6 直連。
-         *
-         * 即使源訂閱意外包含
-         * dialer-proxy，
-         * 也強制移除。
-         */
-        const directProxy = {
-            ...proxy,
-        };
-        delete directProxy["dialer-proxy"];
-        result.push(directProxy);
-        /*
-         * 沒有普通機場節點時，
-         * 不生成 Relay。
-         */
-        if (!hasRegularProxies) {
-            continue;
-        }
-        /*
-         * M Relay
-         *
-         * Client
-         * →
-         * 链式前置
-         * →
-         * Chicken IPv6
-         * →
-         * HINET IPv4
-         */
-        result.push({
-            ...proxy,
-            name: relayPlan.relayNameBySource.get(proxy.name),
-            "dialer-proxy": GROUP.RELAY,
-        });
-    }
-    /*
-     * Direct proxies
-     */
+function buildFinalProxies(filteredProxies) {
+    const result = filteredProxies.map((proxy) => ({
+        ...proxy,
+    }));
+
     result.push(
         {
             name: DIRECT_PROXY.DUAL,
@@ -841,64 +730,27 @@ function buildFinalProxies(filteredProxies, relayPlan, hasRegularProxies) {
             "ip-version": "ipv6-prefer",
         },
     );
+
     return result;
 }
 /* =========================
  * 20. Proxy Groups
  * ========================= */
-function buildMTestGroups(residentialProxies, relayPlan) {
-    if (!SETTINGS.enableMTestGroups) {
-        return [];
-    }
-    const sourceProxy = residentialProxies.find((proxy) => isMResidentialProxy(proxy));
-    if (!sourceProxy) {
-        return [];
-    }
-    const directName = sourceProxy.name;
-    const groups = [
-        selectGroup(GROUP.M_TEST_DIRECT, [directName], {
-            icon: ICON.residential,
-        }),
-    ];
-    const relayName = relayPlan.relayNameBySource.get(directName);
-    if (relayName && relayPlan.relayNames.includes(relayName)) {
-        groups.push(
-            selectGroup(GROUP.M_TEST_RELAY, [relayName], {
-                icon: ICON.residential,
-            }),
-        );
-    }
-    return groups;
-}
-function buildProxyGroups({ regularProxies, residentialProxies, regionGroups, relayPlan }) {
+function buildProxyGroups({ regularProxies, residentialProxies, regionGroups }) {
     const regularNames = unique(regularProxies.map((proxy) => proxy.name));
-    const residentialNames = unique([...residentialProxies.map((proxy) => proxy.name), ...relayPlan.relayNames]);
+    const residentialNames = unique(residentialProxies.map((proxy) => proxy.name));
     const hasRegular = regularNames.length > 0;
     const hasResidential = residentialNames.length > 0;
     const regionSelectNames = regionGroups.filter((group) => group.type === "select").map((group) => group.name);
     const normalBaseGroupNames = hasRegular ? [GROUP.MANUAL, GROUP.AUTO, GROUP.BALANCE] : [];
     const functionalGroups = [];
-    /*
-     * M 專用測試組
-     *
-     * 🧪 M直连测试
-     * → 只有 M 原始直連節點
-     *
-     * 🧪 MRelay测试
-     * → 只有與其對應的 M Relay 節點
-     *
-     * 不參與正常代理選擇，
-     * 僅供手動測速與故障診斷。
-     */
-    const mTestGroups = buildMTestGroups(residentialProxies, relayPlan); /*
+    /**
      * 链式前置
      *
      * 只允許普通機場節點。
      *
      * 不允許：
-     *
      * 家宽
-     * M Relay
      * 默认代理
      * 手动选择
      *
@@ -1025,7 +877,6 @@ function buildProxyGroups({ regularProxies, residentialProxies, regionGroups, re
     const globalGroup = selectGroup(
         GROUP.GLOBAL,
         unique([
-            ...mTestGroups.map((group) => group.name),
             GROUP.SENSITIVE,
             ...residentialGroups.map((group) => group.name),
             ...functionalGroups.map((group) => group.name),
@@ -1036,7 +887,7 @@ function buildProxyGroups({ regularProxies, residentialProxies, regionGroups, re
         },
     );
     return {
-        proxyGroups: [...mTestGroups, sensitiveGroup, globalGroup, ...functionalGroups, ...residentialGroups, ...regionGroups],
+        proxyGroups: [sensitiveGroup, globalGroup, ...functionalGroups, ...residentialGroups, ...regionGroups],
         finalRules,
         finalRuleProviders,
     };
@@ -1267,37 +1118,14 @@ function assertConfigIntegrity(config) {
  * 25. Main
  * ========================= */
 function main(config) {
-    /*
-     * 1.
-     * 過濾 / 分類節點
-     */
     const { filtered, residential, regular } = filterAndClassifyProxies(config || {});
-    const hasRegular = regular.length > 0;
-    /*
-     * 2.
-     * 區域 groups
-     */
     const regionGroups = buildRegionGroups(regular);
-    /*
-     * 3.
-     * M Relay
-     */
-    const relayPlan = buildRelayPlan(residential, hasRegular);
-    /*
-     * 4.
-     * Proxy Groups
-     */
     const { proxyGroups, finalRules, finalRuleProviders } = buildProxyGroups({
         regularProxies: regular,
         residentialProxies: residential,
         regionGroups,
-        relayPlan,
     });
-    /*
-     * 5.
-     * Proxies
-     */
-    const finalProxies = buildFinalProxies(filtered, relayPlan, hasRegular);
+    const finalProxies = buildFinalProxies(filtered);
     /*
      * 6.
      * DNS / Hosts
