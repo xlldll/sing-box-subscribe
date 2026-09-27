@@ -550,6 +550,10 @@ function isCAirportProxy(proxy) {
 function isResidentialProxy(proxy) {
     return RESIDENTIAL_RE.test(String(proxy?.name || ""));
 }
+//必須是家寬節點+名稱包含 Relay
+function isRelayProxy(proxy) {
+    return isResidentialProxy(proxy) && /relay/i.test(String(proxy?.name || ""));
+}
 /* =========================
  * 14. 區域 Group
  * ========================= */
@@ -709,11 +713,20 @@ function buildRegionGroups(regularProxies) {
 /* =========================
  * 19. 最終 Proxy
  * ========================= */
-function buildFinalProxies(filteredProxies) {
-    const result = filteredProxies.map((proxy) => ({
-        ...proxy,
-    }));
-
+function buildFinalProxies(filteredProxies, hasRegularProxies) {
+    const result = [];
+    for (const proxy of filteredProxies) {
+        const finalProxy = {
+            ...proxy,
+        };
+        if (isRelayProxy(finalProxy)) {
+            if (!hasRegularProxies) {
+                throw new Error(`Relay 節點 [${finalProxy.name}] 需要 [${GROUP.RELAY}]，但目前沒有可用的普通機場節點`);
+            }
+            finalProxy["dialer-proxy"] = GROUP.RELAY;
+        }
+        result.push(finalProxy);
+    }
     result.push(
         {
             name: DIRECT_PROXY.DUAL,
@@ -730,7 +743,6 @@ function buildFinalProxies(filteredProxies) {
             "ip-version": "ipv6-prefer",
         },
     );
-
     return result;
 }
 /* =========================
@@ -1125,7 +1137,8 @@ function main(config) {
         residentialProxies: residential,
         regionGroups,
     });
-    const finalProxies = buildFinalProxies(filtered);
+    const hasRegular = regular.length > 0;
+    const finalProxies = buildFinalProxies(filtered, hasRegular);
     /*
      * 6.
      * DNS / Hosts
