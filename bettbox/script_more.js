@@ -31,7 +31,7 @@ const SETTINGS = {
     enableResidentialTestGroups: true,
     healthCheck: {
         interval: 1800,
-        timeout: 15000,
+        timeout: 30000,
         url: "https://g.cn/generate_204",
         lazy: true,
         maxFailedTimes: 3,
