@@ -258,7 +258,7 @@ function main(config) {
         "allow-lan": true,
         ipv6: true,
         mode: "rule",
-        "log-level": "info",
+        "log-level": "silent",
         "bind-address": "*",
         "unified-delay": true,
         "tcp-concurrent": true,
