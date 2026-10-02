@@ -68,7 +68,7 @@ const DIRECT_PROXY = {
     IPV6: "🇨🇳 直连 | IPv6优先",
 };
 const BUILTIN_TARGETS = new Set(["DIRECT", "REJECT", "REJECT-DROP", "PASS"]);
-const SUPPORTED_PROXY_TYPES = new Set(["vless", "anytls"]);
+const SUPPORTED_PROXY_TYPES = new Set(["vless", "anytls", "hysteria2"]);
 const QURE = "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color";
 const ICON = {
     proxy: `${QURE}/Proxy.png`,
