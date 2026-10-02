@@ -32,7 +32,7 @@ const GROUP = {
     AUTO: "自动选择",
     MANUAL: "手动选择",
 };
-const SUPPORTED_PROXY_TYPES = new Set(["vless", "anytls"]);
+const SUPPORTED_PROXY_TYPES = new Set(["vless", "anytls", "hysteria2"]);
 const C_PROVIDER_RE = /(?:^|[^A-Za-z0-9])C(?:机场|機場)?(?:$|[^A-Za-z0-9])/i;
 const RESIDENTIAL_RE =
     /家宽|家寬|家庭宽带|家庭寬頻|住宅(?:IP|网络|網路|寬頻|宽带)?|原生住宅|住宅原生|residential|residential\s*ip|home\s*(?:ip|broadband)|isp\s*ip/i;
