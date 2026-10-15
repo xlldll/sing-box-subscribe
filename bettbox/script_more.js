@@ -1,19 +1,3 @@
-/**
- * Bettbox / Mihomo 配置生成腳本
- *
- * 核心：
- * - 僅保留 VLESS / AnyTLS / Hysteria2。
- * - C 機場只保留家寬節點。
- * - 家寬集中至「家宽」。
- * - 名稱前綴 [M] 的節點集中至「M节点」手動組。
- * - M节点作為上層策略組候選，但不加入只應包含實際節點的底層組。
- * - 刪除負載均衡。
- * - Relay 家寬節點使用「链式前置」。
- * - 敏感服務預設走「敏感代理组」。
- * - Emby 預設啟用，支援額外域名／域名後綴分流。
- * - 保留 Fake-IP、TUN、Sniffer、IPv6、DNS 分流及完整性檢查。
- */
-
 const SETTINGS = {
     enableServices: {
         AI: true,
@@ -41,28 +25,18 @@ const SETTINGS = {
         AdBlock: false,
     },
 
-    /*
-     * 額外指定走 Emby 的完整域名。
-     */
     embyDomains: [
         // "emby.example.com",
         "link01.okemby.org",
         "emby.bangumi.ca",
     ],
 
-    /*
-     * 額外指定走 Emby 的域名後綴。
-     */
     embyDomainSuffixes: [
         // "example.com",
     ],
 
     excludeHighRateProxies: false,
 
-    /*
-     * 保留原有：
-     * 為 [M] 家寬節點建立獨立測試組。
-     */
     enableResidentialTestGroups: true,
 
     healthCheck: {
@@ -144,29 +118,13 @@ const RESIDENTIAL_RE =
 const INFO_NODE_RE =
     /群|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|无法|说明|使用|提示|访问|支持|教程|关注|更新|作者|加入|超时|收藏|福利|邀请|好友|失联|选择|剩余|公益|发布|DIZTNA|通路|登录|禁止|定时|渠道|牢记|永久|余额|阁下|本站|刷新|导航|建议|重置|以下|⚠️|@|Expire|https?:\/\/|(?:^|[\s./])com(?:$|[\s/])/iu;
 
-/*
- * C 機場識別。
- */
 const C_PROVIDER_RE = /(?:^|[^A-Za-z0-9])C(?:机场|機場)?(?:$|[^A-Za-z0-9])/i;
 
 /*
- * M 節點：
- * 名稱前綴帶有 [M] 即匹配。
- *
- * 例如：
- * [M] 美国
- * [M] 台湾 家宽
- *
- * 不匹配：
- * 美国 M
- * M机场 美国
- * Miami
+ * 名稱前綴 [M]
  */
 const M_NODE_RE = /^\s*\[M\]/i;
 
-/*
- * 地區分類。
- */
 const REGION_DEFINITIONS = [
     {
         name: "台湾",
@@ -570,12 +528,6 @@ const SERVICE_CONFIGS = [
         rules: ["RULE-SET,paypal,PayPal"],
     },
 
-    /*
-     * Emby
-     *
-     * 預設開啟。
-     * 組構成使用與其他普通服務相同的通用邏輯。
-     */
     {
         name: "Emby",
         direct: true,
@@ -757,9 +709,6 @@ function isCAirportProxy(proxy) {
     return C_PROVIDER_RE.test(text);
 }
 
-/*
- * M 節點只依據節點名稱。
- */
 function isMNode(proxy) {
     return M_NODE_RE.test(String(proxy?.name || ""));
 }
@@ -776,54 +725,24 @@ function createRegionGroups(name, icon, proxies) {
     const autoName = `${name}-自动选择`;
 
     return [
-        /*
-         * 地區自動組：
-         * 只包含該地區實際節點。
-         */
         urlTestGroup(autoName, proxies),
 
-        /*
-         * 地區選擇組：
-         * 同樣保持地區純粹性，
-         * 不塞 M节点 等跨地區策略組。
-         */
         selectGroup(name, [autoName, ...proxies], {
             icon,
         }),
     ];
 }
 
-/*
- * 原有 [M] 家寬獨立測試組。
- *
- * 與新的「M节点」組是兩套用途：
- *
- * 🧪 [M] xxx 家宽
- * → 單家寬節點測試／選擇
- *
- * M节点
- * → 所有名稱前綴 [M] 節點的手動集合
- */
 function buildResidentialTestGroups(residentialProxies) {
     if (!SETTINGS.enableResidentialTestGroups) {
         return [];
     }
 
-    return residentialProxies
-
-        .filter(isMNode)
-
-        .map((proxy) =>
-            selectGroup(
-                `🧪 ${proxy.name}`,
-
-                [proxy.name],
-
-                {
-                    icon: ICON.residential,
-                },
-            ),
-        );
+    return residentialProxies.filter(isMNode).map((proxy) =>
+        selectGroup(`🧪 ${proxy.name}`, [proxy.name], {
+            icon: ICON.residential,
+        }),
+    );
 }
 
 function matchDomainPattern(pattern, domains) {
@@ -887,9 +806,6 @@ function matchDomainPattern(pattern, domains) {
     return false;
 }
 
-/*
- * 過濾與分類節點。
- */
 function filterAndClassifyProxies(config) {
     const input = Array.isArray(config?.proxies) ? config.proxies : [];
 
@@ -920,10 +836,6 @@ function filterAndClassifyProxies(config) {
 
         const isResidential = isResidentialProxy(proxy);
 
-        /*
-         * C 機場：
-         * 只保留家寬。
-         */
         if (isC && !isResidential) {
             continue;
         }
@@ -944,7 +856,7 @@ function filterAndClassifyProxies(config) {
     }
 
     if (!filtered.length) {
-        throw new Error("沒有可用節點：僅保留支援協議，且 C 機場只保留家寬節點");
+        throw new Error("沒有可用節點");
     }
 
     return {
@@ -954,9 +866,6 @@ function filterAndClassifyProxies(config) {
     };
 }
 
-/*
- * 地區組只使用普通節點。
- */
 function buildRegionGroups(regularProxies) {
     const buckets = Object.fromEntries(
         REGION_DEFINITIONS.map((region) => [
@@ -990,30 +899,17 @@ function buildRegionGroups(regularProxies) {
         }
     }
 
-    const groups = REGION_DEFINITIONS.filter((region) => buckets[region.name].proxies.length)
-
-        .flatMap((region) => createRegionGroups(region.name, region.icon, unique(buckets[region.name].proxies)));
+    const groups = REGION_DEFINITIONS.filter((region) => buckets[region.name].proxies.length).flatMap((region) =>
+        createRegionGroups(region.name, region.icon, unique(buckets[region.name].proxies)),
+    );
 
     if (other.length) {
-        groups.push(
-            ...createRegionGroups(
-                "其他节点",
-
-                ICON.world,
-
-                unique(other),
-            ),
-        );
+        groups.push(...createRegionGroups("其他节点", ICON.world, unique(other)));
     }
 
     return groups;
 }
 
-/*
- * 最終 proxy。
- *
- * Relay 家寬節點自動使用「链式前置」。
- */
 function buildFinalProxies(filteredProxies, hasRegularProxies) {
     const result = [];
 
@@ -1024,7 +920,7 @@ function buildFinalProxies(filteredProxies, hasRegularProxies) {
 
         if (isRelayProxy(finalProxy)) {
             if (!hasRegularProxies) {
-                throw new Error(`Relay 節點 [${finalProxy.name}] 需要 [${GROUP.RELAY}]，但目前沒有可用普通節點`);
+                throw new Error(`Relay 節點 [${finalProxy.name}] 需要 [${GROUP.RELAY}]`);
             }
 
             finalProxy["dialer-proxy"] = GROUP.RELAY;
@@ -1036,23 +932,18 @@ function buildFinalProxies(filteredProxies, hasRegularProxies) {
     result.push(
         {
             name: DIRECT_PROXY.DUAL,
-
             type: "direct",
         },
 
         {
             name: DIRECT_PROXY.IPV4,
-
             type: "direct",
-
             "ip-version": "ipv4-prefer",
         },
 
         {
             name: DIRECT_PROXY.IPV6,
-
             type: "direct",
-
             "ip-version": "ipv6-prefer",
         },
     );
@@ -1060,28 +951,12 @@ function buildFinalProxies(filteredProxies, hasRegularProxies) {
     return result;
 }
 
-/*
- * 建立所有代理組。
- */
 function buildProxyGroups({ filteredProxies, regularProxies, residentialProxies, regionGroups }) {
     const regularNames = unique(regularProxies.map((proxy) => proxy.name));
 
     const residentialNames = unique(residentialProxies.map((proxy) => proxy.name));
 
-    /*
-     * M节点：
-     * 從所有保留節點中，
-     * 挑名稱前綴 [M] 的節點。
-     *
-     * 因此普通／家寬 [M] 都可以進。
-     */
-    const mNames = unique(
-        filteredProxies
-
-            .filter(isMNode)
-
-            .map((proxy) => proxy.name),
-    );
+    const mNames = unique(filteredProxies.filter(isMNode).map((proxy) => proxy.name));
 
     const hasRegular = regularNames.length > 0;
 
@@ -1089,55 +964,24 @@ function buildProxyGroups({ filteredProxies, regularProxies, residentialProxies,
 
     const hasM = mNames.length > 0;
 
-    const regionSelectNames = regionGroups
+    const regionSelectNames = regionGroups.filter((group) => group.type === "select").map((group) => group.name);
 
-        .filter((group) => group.type === "select")
-
-        .map((group) => group.name);
-
-    /*
-     * 普通底層策略。
-     *
-     * 已刪除：
-     * 负载均衡
-     */
     const normalBaseGroupNames = hasRegular ? [GROUP.MANUAL, GROUP.AUTO] : [];
 
-    /*
-     * M节点 是策略型候選，
-     * 只加入上層組。
-     */
     const mGroupCandidate = hasM ? [GROUP.M] : [];
 
     const functionalGroups = [];
 
     const residentialTestGroups = buildResidentialTestGroups(residentialProxies);
 
-    /*
-     * 链式前置
-     *
-     * 只包含普通實際節點。
-     * 不加入 M节点 組。
-     */
     if (hasRegular) {
         functionalGroups.push(
-            selectGroup(
-                GROUP.RELAY,
-
-                regularNames,
-
-                {
-                    icon: ICON.proxy,
-                },
-            ),
+            selectGroup(GROUP.RELAY, regularNames, {
+                icon: ICON.proxy,
+            }),
         );
     }
 
-    /*
-     * 默认代理
-     *
-     * 加入 M节点。
-     */
     const defaultCandidates = unique([
         ...mGroupCandidate,
 
@@ -1149,71 +993,32 @@ function buildProxyGroups({ filteredProxies, regularProxies, residentialProxies,
     ]);
 
     functionalGroups.push(
-        selectGroup(
-            GROUP.DEFAULT,
-
-            defaultCandidates,
-
-            {
-                icon: ICON.proxy,
-            },
-        ),
+        selectGroup(GROUP.DEFAULT, defaultCandidates, {
+            icon: ICON.proxy,
+        }),
     );
 
-    /*
-     * 手动选择 / 自动选择
-     *
-     * 都是純節點組，
-     * 不引用 M节点 組。
-     */
     if (hasRegular) {
         functionalGroups.push(
-            selectGroup(
-                GROUP.MANUAL,
+            selectGroup(GROUP.MANUAL, [...regularNames, ...residentialNames], {
+                icon: ICON.rocket,
+            }),
 
-                [...regularNames, ...residentialNames],
-
-                {
-                    icon: ICON.rocket,
-                },
-            ),
-
-            urlTestGroup(
-                GROUP.AUTO,
-
-                regularNames,
-            ),
+            urlTestGroup(GROUP.AUTO, regularNames),
         );
     } else if (hasResidential) {
         functionalGroups.push(
-            selectGroup(
-                GROUP.MANUAL,
-
-                residentialNames,
-
-                {
-                    icon: ICON.rocket,
-                },
-            ),
+            selectGroup(GROUP.MANUAL, residentialNames, {
+                icon: ICON.rocket,
+            }),
         );
     }
 
-    /*
-     * M节点
-     *
-     * 純實際節點手動組。
-     */
     const mGroups = hasM
         ? [
-              selectGroup(
-                  GROUP.M,
-
-                  mNames,
-
-                  {
-                      icon: ICON.world,
-                  },
-              ),
+              selectGroup(GROUP.M, mNames, {
+                  icon: ICON.world,
+              }),
           ]
         : [];
 
@@ -1223,9 +1028,6 @@ function buildProxyGroups({ filteredProxies, regularProxies, residentialProxies,
         ...BASE_RULE_PROVIDERS,
     };
 
-    /*
-     * 服務分流。
-     */
     for (const service of SERVICE_CONFIGS) {
         if (!SETTINGS.enableServices[service.name]) {
             continue;
@@ -1233,59 +1035,20 @@ function buildProxyGroups({ filteredProxies, regularProxies, residentialProxies,
 
         finalRules.push(...service.rules);
 
-        /*
-         * 服務額外自訂域名。
-         *
-         * 目前主要給 Emby 使用，
-         * 但結構本身可供其他服務重用。
-         */
-        finalRules.push(
-            ...buildDomainRules(
-                service.customDomains,
+        finalRules.push(...buildDomainRules(service.customDomains, service.customDomainSuffixes, service.name));
 
-                service.customDomainSuffixes,
+        Object.assign(finalRuleProviders, service.providers || {});
 
-                service.name,
-            ),
-        );
-
-        Object.assign(
-            finalRuleProviders,
-
-            service.providers || {},
-        );
-
-        /*
-         * Reject 組保持獨立。
-         */
         if (service.reject) {
             functionalGroups.push(
-                selectGroup(
-                    service.name,
-
-                    ["REJECT", "REJECT-DROP", "PASS"],
-
-                    {
-                        icon: service.icon,
-                    },
-                ),
+                selectGroup(service.name, ["REJECT", "REJECT-DROP", "PASS"], {
+                    icon: service.icon,
+                }),
             );
 
             continue;
         }
 
-        /*
-         * 所有普通服務組：
-         *
-         * M节点
-         * 敏感代理组（僅敏感服務）
-         * 默认代理
-         * 家宽
-         * 手动选择
-         * 自动选择
-         * 地區組
-         * 直连（direct=true）
-         */
         const members = unique([
             ...(service.preferResidential ? [GROUP.SENSITIVE] : []),
 
@@ -1307,26 +1070,14 @@ function buildProxyGroups({ filteredProxies, regularProxies, residentialProxies,
         const effectiveDefault = requestedDefault && members.includes(requestedDefault) ? requestedDefault : GROUP.DEFAULT;
 
         functionalGroups.push(
-            selectGroup(
-                service.name,
+            selectGroup(service.name, members, {
+                icon: service.icon,
 
-                members,
-
-                {
-                    icon: service.icon,
-
-                    "default-selected": effectiveDefault,
-                },
-            ),
+                "default-selected": effectiveDefault,
+            }),
         );
     }
 
-    /*
-     * 漏网之鱼
-     *
-     * 屬上層策略選擇，
-     * 因此加入 M节点。
-     */
     functionalGroups.push(
         selectGroup(
             GROUP.FALLBACK,
@@ -1338,10 +1089,6 @@ function buildProxyGroups({ filteredProxies, regularProxies, residentialProxies,
             },
         ),
 
-        /*
-         * 直连只包含 direct proxy。
-         * 不加入 M节点。
-         */
         selectGroup(
             GROUP.DIRECT,
 
@@ -1355,51 +1102,22 @@ function buildProxyGroups({ filteredProxies, regularProxies, residentialProxies,
         ),
     );
 
-    /*
-     * 家宽
-     *
-     * 純實際節點組。
-     */
     const residentialGroups = hasResidential
         ? [
-              selectGroup(
-                  GROUP.RESIDENTIAL,
-
-                  residentialNames,
-
-                  {
-                      icon: ICON.residential,
-                  },
-              ),
+              selectGroup(GROUP.RESIDENTIAL, residentialNames, {
+                  icon: ICON.residential,
+              }),
           ]
         : [];
 
-    /*
-     * 敏感代理组
-     *
-     * 加入 M节点，
-     * 但保持原來的預設策略：
-     *
-     * 有家宽 → 家宽
-     * 無家宽 → 默认代理
-     */
     const sensitiveMembers = unique([...(hasResidential ? [GROUP.RESIDENTIAL] : []), GROUP.DEFAULT, ...mGroupCandidate]);
 
-    const sensitiveGroup = selectGroup(
-        GROUP.SENSITIVE,
+    const sensitiveGroup = selectGroup(GROUP.SENSITIVE, sensitiveMembers, {
+        icon: ICON.proxy,
 
-        sensitiveMembers,
+        "default-selected": hasResidential ? GROUP.RESIDENTIAL : GROUP.DEFAULT,
+    });
 
-        {
-            icon: ICON.proxy,
-
-            "default-selected": hasResidential ? GROUP.RESIDENTIAL : GROUP.DEFAULT,
-        },
-    );
-
-    /*
-     * GLOBAL
-     */
     const globalGroup = selectGroup(
         GROUP.GLOBAL,
 
@@ -1445,12 +1163,201 @@ function buildProxyGroups({ filteredProxies, regularProxies, residentialProxies,
     };
 }
 
+/*
+ * ==========================
+ * DNS
+ * ==========================
+ *
+ * 核心：
+ *
+ * 普通海外域名
+ * → 默认代理
+ *
+ * 服務域名
+ * → 對應服務組
+ *
+ * AI DNS
+ * → #AI
+ *
+ * Facebook DNS
+ * → #Facebook
+ *
+ * Emby DNS
+ * → #Emby
+ *
+ * 因此服務組切換時，
+ * DNS DoH 出口會同步跟著服務組切換。
+ */
+
 const COMMON_DNS_RE =
     /(223\.5\.5\.5|223\.6\.6\.6|119\.29\.29\.29|1\.12\.12\.12|120\.53\.53\.53|114\.114\.114\.114|180\.76\.76\.76|1\.1\.1\.1|1\.0\.0\.1|8\.8\.8\.8|8\.8\.4\.4|94\.140\.14\.14|94\.140\.15\.15|127\.0\.0\.1|alidns|doh\.pub|dot\.pub|dnspod|dns\.baidu|dns\.google|cloudflare|adguard|system)/i;
 
+function buildGroupDns(groupName) {
+    return [`https://dns.cloudflare.com/dns-query#${groupName}`, `https://dns.google/dns-query#${groupName}`];
+}
+
 /*
- * DNS / Hosts
+ * 把服務規則轉成 DNS policy。
+ *
+ * 支援：
+ *
+ * RULE-SET
+ * DOMAIN
+ * DOMAIN-SUFFIX
+ *
+ * RULE-SET 只接受 behavior=domain。
+ *
+ * IP CIDR provider 不進 DNS policy。
+ *
+ * DOMAIN-KEYWORD 無法安全一比一映射至
+ * nameserver-policy，因此保留在流量規則，
+ * 不在這裡強行轉換。
  */
+function addServiceDnsRules(policy, service) {
+    if (!service || service.reject) {
+        return;
+    }
+
+    const dnsServers = buildGroupDns(service.name);
+
+    const providers = service.providers || {};
+
+    for (const rule of service.rules || []) {
+        const parts = String(rule)
+            .split(",")
+            .map((item) => item.trim());
+
+        const type = parts[0];
+
+        const value = parts[1];
+
+        if (!type || !value) {
+            continue;
+        }
+
+        if (type === "RULE-SET") {
+            const provider = providers[value];
+
+            if (provider && provider.behavior === "domain") {
+                policy[`rule-set:${value}`] = dnsServers;
+            }
+
+            continue;
+        }
+
+        if (type === "DOMAIN") {
+            const domain = cleanDomain(value);
+
+            if (domain) {
+                policy[domain] = dnsServers;
+            }
+
+            continue;
+        }
+
+        if (type === "DOMAIN-SUFFIX") {
+            const domain = cleanDomain(value);
+
+            if (domain) {
+                policy[`+.${domain}`] = dnsServers;
+            }
+        }
+    }
+
+    /*
+     * 自訂完整域名。
+     */
+    for (const value of service.customDomains || []) {
+        const domain = cleanDomain(value);
+
+        if (domain) {
+            policy[domain] = dnsServers;
+        }
+    }
+
+    /*
+     * 自訂後綴。
+     */
+    for (const value of service.customDomainSuffixes || []) {
+        const domain = cleanDomain(value);
+
+        if (domain) {
+            policy[`+.${domain}`] = dnsServers;
+        }
+    }
+}
+
+/*
+ * 建立全部服務 DNS Policy。
+ */
+function buildServiceDnsPolicy() {
+    const policy = {};
+
+    for (const service of SERVICE_CONFIGS) {
+        if (!SETTINGS.enableServices[service.name]) {
+            continue;
+        }
+
+        addServiceDnsRules(policy, service);
+    }
+
+    return policy;
+}
+
+/*
+ * BASE_RULES 中明確指定走敏感代理組的域名，
+ * DNS 同樣跟隨敏感代理组。
+ *
+ * 例如：
+ * ipsuper
+ * ipwhois
+ * ippure
+ * ping0
+ * ip2location
+ * db-ip
+ */
+function buildSensitiveBaseDnsPolicy() {
+    const policy = {};
+
+    const dnsServers = buildGroupDns(GROUP.SENSITIVE);
+
+    for (const rule of BASE_RULES) {
+        const parts = String(rule)
+            .split(",")
+            .map((item) => item.trim());
+
+        const type = parts[0];
+
+        const value = parts[1];
+
+        const target = parts[2];
+
+        if (target !== GROUP.SENSITIVE) {
+            continue;
+        }
+
+        if (type === "DOMAIN") {
+            const domain = cleanDomain(value);
+
+            if (domain) {
+                policy[domain] = dnsServers;
+            }
+
+            continue;
+        }
+
+        if (type === "DOMAIN-SUFFIX") {
+            const domain = cleanDomain(value);
+
+            if (domain) {
+                policy[`+.${domain}`] = dnsServers;
+            }
+        }
+    }
+
+    return policy;
+}
+
 function buildDnsAndHosts(config, filteredProxies) {
     const originalDns = isObject(config?.dns) ? config.dns : {};
 
@@ -1458,14 +1365,19 @@ function buildDnsAndHosts(config, filteredProxies) {
 
     const originalProxyServerNameserver = toArray(originalDns["proxy-server-nameserver"]).filter((dns) => !COMMON_DNS_RE.test(String(dns)));
 
+    /*
+     * 找出代理 server 域名。
+     */
     const proxyDomains = new Set(
         filteredProxies
-
             .filter((proxy) => typeof proxy.server === "string" && proxy.server.trim())
-
             .map((proxy) => proxy.server.toLowerCase()),
     );
 
+    /*
+     * 僅保留原始配置中，
+     * 與代理 server 域名相關的 DNS policy。
+     */
     const originalPolicyNameserver = {};
 
     for (const policy of [originalDns["nameserver-policy"], originalDns["proxy-server-nameserver-policy"]]) {
@@ -1480,63 +1392,39 @@ function buildDnsAndHosts(config, filteredProxies) {
         }
     }
 
+    /*
+     * 中國 DNS。
+     *
+     * 代理 server 域名解析也走這裡，
+     * 避免代理自身形成 DNS 依賴循環。
+     */
     const chinaDNS = ["https://dns.alidns.com/dns-query#DIRECT", "https://doh.pub/dns-query#DIRECT"];
 
-    const foreignDNS = [`https://dns.cloudflare.com/dns-query#${GROUP.DEFAULT}`, `https://dns.google/dns-query#${GROUP.DEFAULT}`];
+    /*
+     * 普通海外 DNS。
+     *
+     * 未命中任何服務 DNS policy 時，
+     * 通過默认代理查詢。
+     */
+    const foreignDNS = buildGroupDns(GROUP.DEFAULT);
 
-    const sensitiveDNS = [`https://dns.cloudflare.com/dns-query#${GROUP.SENSITIVE}`, `https://dns.google/dns-query#${GROUP.SENSITIVE}`];
+    /*
+     * 所有服務 DNS：
+     *
+     * AI → #AI
+     * Facebook → #Facebook
+     * Emby → #Emby
+     * Media → #Media
+     * ...
+     */
+    const serviceDnsPolicy = buildServiceDnsPolicy();
 
-    const sensitiveDnsPolicy = {};
-
-    if (SETTINGS.enableServices.AI) {
-        sensitiveDnsPolicy["rule-set:ai"] = sensitiveDNS;
-    }
-
-    if (SETTINGS.enableServices.Facebook) {
-        sensitiveDnsPolicy["rule-set:facebook"] = sensitiveDNS;
-
-        sensitiveDnsPolicy["rule-set:instagram_sensitive"] = sensitiveDNS;
-
-        sensitiveDnsPolicy["rule-set:threads"] = sensitiveDNS;
-    }
-
-    if (SETTINGS.enableServices.Twitter) {
-        sensitiveDnsPolicy["rule-set:twitter"] = sensitiveDNS;
-    }
-
-    if (SETTINGS.enableServices.Reddit) {
-        sensitiveDnsPolicy["rule-set:reddit"] = sensitiveDNS;
-    }
-
-    if (SETTINGS.enableServices.PayPal) {
-        sensitiveDnsPolicy["rule-set:paypal"] = sensitiveDNS;
-    }
-
-    if (SETTINGS.enableServices.GoogleAccount) {
-        sensitiveDnsPolicy["accounts.google.com"] = sensitiveDNS;
-
-        sensitiveDnsPolicy["myaccount.google.com"] = sensitiveDNS;
-
-        sensitiveDnsPolicy["oauth2.googleapis.com"] = sensitiveDNS;
-    }
-
-    if (SETTINGS.enableServices.MicrosoftAccount) {
-        sensitiveDnsPolicy["login.live.com"] = sensitiveDNS;
-
-        sensitiveDnsPolicy["account.microsoft.com"] = sensitiveDNS;
-
-        sensitiveDnsPolicy["login.microsoftonline.com"] = sensitiveDNS;
-
-        sensitiveDnsPolicy["login.windows.net"] = sensitiveDNS;
-    }
-
-    if (SETTINGS.enableServices.AppleID) {
-        sensitiveDnsPolicy["appleid.apple.com"] = sensitiveDNS;
-
-        sensitiveDnsPolicy["idmsa.apple.com"] = sensitiveDNS;
-
-        sensitiveDnsPolicy["account.apple.com"] = sensitiveDNS;
-    }
+    /*
+     * 固定敏感檢測域名：
+     *
+     * → #敏感代理组
+     */
+    const sensitiveBaseDnsPolicy = buildSensitiveBaseDnsPolicy();
 
     const dns = {
         enable: true,
@@ -1555,6 +1443,12 @@ function buildDnsAndHosts(config, filteredProxies) {
 
         "fake-ip-filter": ["rule-set:private", "rule-set:fakeip_filter"],
 
+        /*
+         * 代理節點自身 server DNS。
+         *
+         * 不能依賴代理服務組，
+         * 否則容易產生雞生蛋依賴。
+         */
         "proxy-server-nameserver": unique([...chinaDNS, ...originalProxyServerNameserver]),
 
         ...(Object.keys(originalPolicyNameserver).length
@@ -1565,11 +1459,33 @@ function buildDnsAndHosts(config, filteredProxies) {
 
         "default-nameserver": ["223.5.5.5", "119.29.29.29"],
 
+        /*
+         * 普通海外：
+         * → 默认代理
+         */
         nameserver: foreignDNS,
 
+        /*
+         * DNS Policy 優先分流。
+         */
         "nameserver-policy": {
-            ...sensitiveDnsPolicy,
+            /*
+             * 服務 DNS。
+             *
+             * DNS 出口跟隨服務組當前選擇。
+             */
+            ...serviceDnsPolicy,
 
+            /*
+             * IP 查詢等固定敏感域名：
+             * → 敏感代理组。
+             */
+            ...sensitiveBaseDnsPolicy,
+
+            /*
+             * 中國域名：
+             * → 中國 DNS / DIRECT。
+             */
             "rule-set:cn": chinaDNS,
         },
 
@@ -1610,9 +1526,6 @@ function buildDnsAndHosts(config, filteredProxies) {
     };
 }
 
-/*
- * 名稱唯一性檢查。
- */
 function assertUniqueNames(items, label) {
     const seen = new Set();
 
@@ -1631,9 +1544,6 @@ function assertUniqueNames(items, label) {
     }
 }
 
-/*
- * 完整性與循環依賴檢查。
- */
 function assertConfigIntegrity(config) {
     const proxies = toArray(config.proxies);
 
@@ -1671,10 +1581,6 @@ function assertConfigIntegrity(config) {
         }
     }
 
-    /*
-     * 建立依賴圖，
-     * 防止 group / dialer-proxy 循環。
-     */
     const graph = new Map();
 
     for (const name of [...proxyNames, ...groupNames]) {
@@ -1734,9 +1640,6 @@ function assertConfigIntegrity(config) {
     }
 }
 
-/*
- * 主程序。
- */
 function main(config) {
     const sourceConfig = config || {};
 
@@ -1756,17 +1659,9 @@ function main(config) {
 
     const hasRegular = regular.length > 0;
 
-    const finalProxies = buildFinalProxies(
-        filtered,
+    const finalProxies = buildFinalProxies(filtered, hasRegular);
 
-        hasRegular,
-    );
-
-    const { dns, hosts } = buildDnsAndHosts(
-        sourceConfig,
-
-        filtered,
-    );
+    const { dns, hosts } = buildDnsAndHosts(sourceConfig, filtered);
 
     const newConfig = {
         dns,
@@ -1860,19 +1755,11 @@ function main(config) {
                 },
 
                 TLS: {
-                    ports: [
-                        443,
-
-                        8443,
-                    ],
+                    ports: [443, 8443],
                 },
 
                 QUIC: {
-                    ports: [
-                        443,
-
-                        8443,
-                    ],
+                    ports: [443, 8443],
                 },
             },
 
