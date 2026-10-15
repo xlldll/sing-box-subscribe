@@ -31,6 +31,7 @@ const GROUP = {
     DEFAULT: "默认代理",
     AUTO: "自动选择",
     MANUAL: "手动选择",
+    FAR: "远边地区",
 };
 const SUPPORTED_PROXY_TYPES = new Set(["vless", "anytls", "hysteria2"]);
 const C_PROVIDER_RE = /(?:^|[^A-Za-z0-9])C(?:机场|機場)?(?:$|[^A-Za-z0-9])/i;
@@ -107,46 +108,141 @@ function filterProxies(config) {
 }
 function buildProxyGroups(proxies) {
     const allNames = unique(proxies.map((proxy) => proxy.name));
+
+    /*
+     * 周邊地區：
+     * 香港、澳門、台灣、韓國、新加坡、
+     * 東南亞等。
+     *
+     * 明確排除日本。
+     */
     const nearbyNames = unique(
         proxies
             .filter((proxy) => {
                 const name = String(proxy.name || "");
+
                 return NEARBY_RE.test(name) && !JAPAN_RE.test(name);
             })
             .map((proxy) => proxy.name),
     );
+
+    /*
+     * 遠邊地區：
+     *
+     * 所有非周邊地區節點，
+     * 同時明確排除日本。
+     *
+     * 例如：
+     * 美國、加拿大、英國、
+     * 歐洲、澳洲等。
+     */
+    const farNames = unique(
+        proxies
+            .filter((proxy) => {
+                const name = String(proxy.name || "");
+
+                return !NEARBY_RE.test(name) && !JAPAN_RE.test(name);
+            })
+            .map((proxy) => proxy.name),
+    );
+
     if (!nearbyNames.length) {
         throw new Error("沒有找到可供默认代理使用的周邊地區節點");
     }
-    return [
+
+    const groups = [
+        /*
+         * 默认代理
+         *
+         * 預設仍然使用周邊地區自动选择。
+         */
         {
             name: GROUP.DEFAULT,
+
             type: "select",
-            proxies: [GROUP.AUTO, GROUP.MANUAL],
+
+            proxies: [GROUP.AUTO, GROUP.FAR, GROUP.MANUAL],
+
             "default-selected": GROUP.AUTO,
+
             icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Proxy.png",
         },
+
+        /*
+         * 周邊地區自動測速
+         *
+         * 不包含日本。
+         */
         {
             name: GROUP.AUTO,
+
             type: "url-test",
+
             proxies: nearbyNames,
+
             url: SETTINGS.healthCheck.url,
+
             interval: SETTINGS.healthCheck.interval,
+
             timeout: SETTINGS.healthCheck.timeout,
+
             tolerance: SETTINGS.healthCheck.tolerance,
+
             lazy: SETTINGS.healthCheck.lazy,
+
             "max-failed-times": SETTINGS.healthCheck.maxFailedTimes,
+
             "empty-fallback": "REJECT",
+
             "exclude-type": "DIRECT",
+
             icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Auto.png",
         },
-        {
-            name: GROUP.MANUAL,
-            type: "select",
-            proxies: allNames,
-            icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Rocket.png",
-        },
     ];
+
+    /*
+     * 遠邊地區
+     *
+     * 有遠邊節點時才建立，
+     * 避免生成空代理組。
+     */
+    if (farNames.length) {
+        groups.push({
+            name: GROUP.FAR,
+
+            type: "select",
+
+            proxies: farNames,
+
+            icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/World_Map.png",
+        });
+    }
+
+    /*
+     * 手动选择
+     *
+     * 保留所有節點，
+     * 包括日本。
+     */
+    groups.push({
+        name: GROUP.MANUAL,
+
+        type: "select",
+
+        proxies: allNames,
+
+        icon: "https://fastly.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/Rocket.png",
+    });
+
+    /*
+     * 如果沒有遠邊節點，
+     * 默认代理中也不能引用不存在的組。
+     */
+    if (!farNames.length) {
+        groups[0].proxies = groups[0].proxies.filter((name) => name !== GROUP.FAR);
+    }
+
+    return groups;
 }
 function cleanDomain(value) {
     return String(value || "")
