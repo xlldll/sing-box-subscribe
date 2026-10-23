@@ -319,6 +319,7 @@ const BASE_RULES = [
 
     "DOMAIN,fsend.cn,直连",
     "DOMAIN,international-gfe.download.nvidia.com,直连",
+    "DOMAIN,vpsnat.com,直连",
 
     "DOMAIN-SUFFIX,tuotuoyun.us,直连",
     "DOMAIN-SUFFIX,tuotuoyun.vip,直连",
