@@ -323,6 +323,7 @@ const BASE_RULES = [
 
     "DOMAIN-SUFFIX,tuotuoyun.us,直连",
     "DOMAIN-SUFFIX,tuotuoyun.vip,直连",
+    "DOMAIN-SUFFIX,tv.micu.hk,直连",
 ];
 
 const SERVICE_CONFIGS = [
