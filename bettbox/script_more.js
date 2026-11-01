@@ -22,7 +22,7 @@ const SETTINGS = {
         AdBlock: false,
     },
 
-    embyDomains: ["link01.okemby.org", "emby.bangumi.ca", "media.micu.hk", "terry-emby.duckdns.org"],
+    embyDomains: ["link00.okemby.org", "link01.okemby.org", "emby.bangumi.ca", "media.micu.hk", "terry-emby.duckdns.org"],
 
     embyDomainSuffixes: [
         // "example.com",
