@@ -33,9 +33,7 @@ const SETTINGS = {
         "terry-emby.duckdns.org",
     ],
 
-    embyDomainSuffixes: [
-        // "example.com",
-    ],
+    embyDomainSuffixes: [],
 
     excludeHighRateProxies: false,
     enableResidentialTestGroups: true,
@@ -63,14 +61,6 @@ const GROUP = {
     GLOBAL: "GLOBAL",
 };
 
-/*
- * ==========================
- * 代理組顯示順序
- * ==========================
- *
- * 未指定：1000
- * url-test：2000，統一放最後
- */
 const GROUP_ORDER = {
     [GROUP.DEFAULT]: 1,
     [GROUP.MANUAL]: 2,
@@ -78,9 +68,7 @@ const GROUP_ORDER = {
     [GROUP.RESIDENTIAL]: 4,
     [GROUP.M]: 5,
     [GROUP.RELAY]: 6,
-
     Emby: 7,
-
     美国: 8,
     台湾: 9,
     新加坡: 10,
@@ -90,7 +78,6 @@ const GROUP_ORDER = {
     其他节点: 14,
     低倍率节点: 15,
     高倍率节点: 16,
-
     AI: 20,
     Facebook: 21,
     GoogleAccount: 22,
@@ -99,7 +86,6 @@ const GROUP_ORDER = {
     Twitter: 25,
     Reddit: 26,
     PayPal: 27,
-
     Media: 30,
     FCM: 31,
     Google: 32,
@@ -111,7 +97,6 @@ const GROUP_ORDER = {
     PikPak: 38,
     Spotify: 39,
     AdBlock: 40,
-
     [GROUP.DIRECT]: 900,
     [GROUP.FALLBACK]: 901,
     [GROUP.GLOBAL]: 902,
@@ -125,9 +110,7 @@ function sortProxyGroups(groups) {
         .map((group, index) => ({ group, index }))
         .sort((a, b) => {
             const aOrder = a.group.type === "url-test" ? AUTO_GROUP_ORDER : (GROUP_ORDER[a.group.name] ?? DEFAULT_GROUP_ORDER);
-
             const bOrder = b.group.type === "url-test" ? AUTO_GROUP_ORDER : (GROUP_ORDER[b.group.name] ?? DEFAULT_GROUP_ORDER);
-
             return aOrder - bOrder || a.index - b.index;
         })
         .map(({ group }) => group);
@@ -187,9 +170,6 @@ const INFO_NODE_RE =
 
 const C_PROVIDER_RE = /(?:^|[^A-Za-z0-9])C(?:机场|機場)?(?:$|[^A-Za-z0-9])/i;
 
-/*
- * 名稱前綴 [M]
- */
 const M_NODE_RE = /^\s*\[M\]/i;
 
 const REGION_DEFINITIONS = [
@@ -198,43 +178,36 @@ const REGION_DEFINITIONS = [
         regex: /🇹🇼|台湾|台灣|台北|高雄|(?:^|[^A-Za-z])TW(?:$|[^A-Za-z])|Taiwan/i,
         icon: ICON.taiwan,
     },
-
     {
         name: "周邊地區",
-        regex: /🇭🇰|香港|(?:^|[^A-Za-z])HK(?:$|[^A-Za-z])|Hong\s*Kong|🇲🇴|澳門|澳门|(?:^|[^A-Za-z])MO(?:$|[^A-Za-z])|Macao|Macau|🇹🇼|台灣|台湾|台北|高雄|(?:^|[^A-Za-z])TW(?:$|[^A-Za-z])|Taiwan|🇸🇬|新加坡|獅城|狮城|(?:^|[^A-Za-z])SG(?:$|[^A-Za-z])|Singapore|🇲🇾|馬來西亞|马来西亚|大馬|大马|(?:^|[^A-Za-z])MY(?:$|[^A-Za-z])|Malaysia|🇹🇭|泰國|泰国|曼谷|(?:^|[^A-Za-z])TH(?:$|[^A-Za-z])|Thailand|Bangkok|🇻🇳|越南|(?:^|[^A-Za-z])VN(?:$|[^A-Za-z])|Vietnam|🇵🇭|菲律賓|菲律宾|馬尼拉|马尼拉|(?:^|[^A-Za-z])PH(?:$|[^A-Za-z])|Philippines|Manila|🇮🇩|印度尼西亞|印度尼西亚|印尼|雅加達|雅加达|(?:^|[^A-Za-z])ID(?:$|[^A-Za-z])|Indonesia|Jakarta|🇧🇳|汶萊|文莱|(?:^|[^A-Za-z])BN(?:$|[^A-Za-z])|Brunei|🇰🇭|柬埔寨|(?:^|[^A-Za-z])KH(?:$|[^A-Za-z])|Cambodia|🇱🇦|寮國|寮国|老撾|老挝|(?:^|[^A-Za-z])LA(?:$|[^A-Za-z])|Laos|🇲🇲|緬甸|缅甸|(?:^|[^A-Za-z])MM(?:$|[^A-Za-z])|Myanmar|Burma/i,
+        regex: /🇭🇰|香港|(?:^|[^A-Za-z])HK(?:$|[^A-Za-z])|Hong\s*Kong|🇲🇴|澳門|澳门|(?:^|[^A-Za-z])MO(?:$|[^A-Za-z])|Macao|Macau|🇹🇼|台灣|台湾|台北|高雄|(?:^|[^A-Za-z])TW(?:$|[^A-Za-z])|Taiwan|🇸🇬|新加坡|獅城|狮城|(?:^|[^A-Za-z])SG(?:$|[^A-Za-z])|Singapore|🇲🇾|馬來西亞|马来西亚|大馬|大马|(?:^|[^A-Za-z])MY(?:$|[^A-Za-z])|Malaysia|🇹🇭|泰國|泰国|曼谷|🇻🇳|越南|(?:^|[^A-Za-z])VN(?:$|[^A-Za-z])|Vietnam|🇵🇭|菲律賓|菲律宾|馬尼拉|(?:^|[^A-Za-z])PH(?:$|[^A-Za-z])|Philippines|Manila|🇮🇩|印度尼西亞|印度尼西亚|印尼|雅加達|雅加达|(?:^|[^A-Za-z])ID(?:$|[^A-Za-z])|Indonesia|Jakarta|🇧🇳|汶萊|文莱|(?:^|[^A-Za-z])BN(?:$|[^A-Za-z])|Brunei|🇰🇭|柬埔寨|(?:^|[^A-Za-z])KH(?:$|[^A-Za-z])|Cambodia|🇱🇦|寮國|老撾|老挝|(?:^|[^A-Za-z])LA(?:$|[^A-Za-z])|Laos|🇲🇲|緬甸|缅甸|(?:^|[^A-Za-z])MM(?:$|[^A-Za-z])|Myanmar|Burma/i,
         icon: ICON.macao,
     },
-
     {
         name: "香港",
         regex: /🇭🇰|香港|港|(?:^|[^A-Za-z])HK(?:$|[^A-Za-z])|Hong\s*Kong/i,
         icon: ICON.hongkong,
     },
-
     {
         name: "日本",
         regex: /🇯🇵|日本|(?:^|[^A-Za-z])JP(?:$|[^A-Za-z])|Japan|🇰🇷|韓國|韩国|首爾|首尔|(?:^|[^A-Za-z])KR(?:$|[^A-Za-z])|Korea|Seoul/i,
         icon: ICON.japan,
     },
-
     {
         name: "美国",
         regex: /🇺🇸|美国|美國|美|(?:^|[^A-Za-z])US(?:$|[^A-Za-z])|America|United\s*States/i,
         icon: ICON.usa,
     },
-
     {
         name: "新加坡",
         regex: /🇸🇬|新加坡|獅城|狮城|(?:^|[^A-Za-z])SG(?:$|[^A-Za-z])|Singapore/i,
         icon: ICON.singapore,
     },
-
     {
         name: "低倍率节点",
         regex: /^(?!.*(?:剩|期|客户端|软件)).*(?:(?<!\d)0\.[0-5]|下载|低倍)/,
         icon: ICON.available,
     },
-
     {
         name: "高倍率节点",
         regex: /(?:[*×xX✕✖⨉]\s*(?:[2-9]\d*|[1-9]\d+)(?:\.\d+)?)|(?:(?<![\d.])(?:[2-9]\d*|[1-9]\d+)(?:\.\d+)?\s*(?:倍|[*×xX✕✖⨉]))/u,
@@ -266,39 +239,27 @@ function metaIp(remote, local = remote, bundle = remote) {
 
 const BASE_RULE_PROVIDERS = {
     private: metaDomain("private"),
-
     private_ip: metaIp("private", "private_ip", "private"),
-
     games_cn: metaDomain("category-games@cn"),
-
     epicgames: metaDomain("epicgames"),
-
     nvidia_cn: metaDomain("nvidia@cn", "nvidia_cn", "nvidia@cn"),
-
     apple_cn: metaDomain("apple@cn", "apple_cn", "apple@cn"),
-
     microsoft_cn: metaDomain("microsoft@cn", "microsoft_cn", "microsoft@cn"),
-
     cn_additional: ruleProvider(
         "domain",
         "https://static-file-global.353355.xyz/rules/cn-additional-list.mrs",
         "./ruleset/cn-additional-list.mrs",
         "geo/geosite/cn.mrs",
     ),
-
     cn_ip: metaIp("cn", "cn_ip", "cn"),
-
     github: metaDomain("github"),
-
     gfw: metaDomain("gfw"),
-
     fakeip_filter: ruleProvider(
         "domain",
         "https://fastly.jsdelivr.net/gh/wwqgtxx/clash-rules@release/fakeip-filter.mrs",
         "./ruleset/fakeip-filter.mrs",
         "geo/geosite/private.mrs",
     ),
-
     cn: ruleProvider(
         "domain",
         "https://fastly.jsdelivr.net/gh/wwqgtxx/clash-rules@release/direct.mrs",
@@ -306,6 +267,13 @@ const BASE_RULE_PROVIDERS = {
         "geo/geosite/cn.mrs",
     ),
 };
+
+// ============================================================
+// MICU 分流核心
+//
+// 海外線的精確 DOMAIN 規則必須放在後綴 DIRECT 之前。
+// 同時放在 UDP 443 REJECT 之前，避免提前拒絕。
+// ============================================================
 
 const BASE_RULES = [
     "DOMAIN-SUFFIX,ipsuper.com,敏感代理组",
@@ -315,11 +283,16 @@ const BASE_RULES = [
     "DOMAIN-SUFFIX,ip2location.com,敏感代理组",
     "DOMAIN-SUFFIX,db-ip.com,敏感代理组",
 
+    "DOMAIN,media.micu.hk,Emby",
+    "DOMAIN,media1.micu.hk,Emby",
+    "DOMAIN,media2.micu.hk,Emby",
+    "DOMAIN,media3.micu.hk,Emby",
+    "DOMAIN-SUFFIX,micu.hk,直连",
+
     "AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((RULE-SET,cn_additional),(RULE-SET,cn_ip,no-resolve)))))),REJECT",
 
     "RULE-SET,private,直连",
     "RULE-SET,private_ip,直连,no-resolve",
-
     "RULE-SET,games_cn,直连",
     "RULE-SET,epicgames,直连",
     "RULE-SET,nvidia_cn,直连",
@@ -329,10 +302,8 @@ const BASE_RULES = [
     "DOMAIN,fsend.cn,直连",
     "DOMAIN,international-gfe.download.nvidia.com,直连",
     "DOMAIN,vpsnat.com,直连",
-
     "DOMAIN-SUFFIX,tuotuoyun.us,直连",
     "DOMAIN-SUFFIX,tuotuoyun.vip,直连",
-    "DOMAIN-SUFFIX,tv.micu.hk,直连",
 ];
 
 const SERVICE_CONFIGS = [
@@ -340,33 +311,23 @@ const SERVICE_CONFIGS = [
         name: "AI",
         defaultSelected: GROUP.SENSITIVE,
         preferResidential: true,
-
         providers: {
             ai: metaDomain("category-ai-!cn", "ai", "category-ai-!cn"),
         },
-
         icon: ICON.chatgpt,
-
         rules: ["RULE-SET,ai,AI"],
     },
-
     {
         name: "Facebook",
         defaultSelected: GROUP.SENSITIVE,
         preferResidential: true,
-
         providers: {
             facebook: metaDomain("facebook"),
-
             facebook_ip: metaIp("facebook", "facebook_ip", "facebook"),
-
             instagram_sensitive: metaDomain("instagram", "instagram_sensitive", "instagram"),
-
             threads: metaDomain("threads"),
         },
-
         icon: ICON.facebook,
-
         rules: [
             "RULE-SET,facebook,Facebook",
             "RULE-SET,facebook_ip,Facebook,no-resolve",
@@ -374,32 +335,24 @@ const SERVICE_CONFIGS = [
             "RULE-SET,threads,Facebook",
         ],
     },
-
     {
         name: "GoogleAccount",
         defaultSelected: GROUP.SENSITIVE,
         preferResidential: true,
-
         providers: {},
-
         icon: ICON.google,
-
         rules: [
             "DOMAIN,accounts.google.com,GoogleAccount",
             "DOMAIN,myaccount.google.com,GoogleAccount",
             "DOMAIN,oauth2.googleapis.com,GoogleAccount",
         ],
     },
-
     {
         name: "MicrosoftAccount",
         defaultSelected: GROUP.SENSITIVE,
         preferResidential: true,
-
         providers: {},
-
         icon: ICON.microsoft,
-
         rules: [
             "DOMAIN,login.live.com,MicrosoftAccount",
             "DOMAIN,account.microsoft.com,MicrosoftAccount",
@@ -407,47 +360,30 @@ const SERVICE_CONFIGS = [
             "DOMAIN,login.windows.net,MicrosoftAccount",
         ],
     },
-
     {
         name: "AppleID",
         defaultSelected: GROUP.SENSITIVE,
         preferResidential: true,
-
         providers: {},
-
         icon: ICON.apple,
-
         rules: ["DOMAIN,appleid.apple.com,AppleID", "DOMAIN,idmsa.apple.com,AppleID", "DOMAIN,account.apple.com,AppleID"],
     },
-
     {
         name: "Media",
         defaultSelected: "台湾",
-
         providers: {
             youtube: metaDomain("youtube"),
-
             instagram: metaDomain("instagram"),
-
             netflix: metaDomain("netflix"),
-
             netflix_ip: metaIp("netflix", "netflix_ip", "netflix"),
-
             hbo: metaDomain("hbo"),
-
             twitch: metaDomain("twitch"),
-
             disney: metaDomain("disney"),
-
             niconico: metaDomain("niconico"),
-
             bbc: metaDomain("bbc"),
-
             pornhub: metaDomain("pornhub"),
         },
-
         icon: ICON.media,
-
         rules: [
             "RULE-SET,youtube,Media",
             "RULE-SET,instagram,Media",
@@ -461,146 +397,101 @@ const SERVICE_CONFIGS = [
             "RULE-SET,pornhub,Media",
         ],
     },
-
     {
         name: "FCM",
         direct: true,
         defaultSelected: GROUP.DIRECT,
-
         providers: {
             googlefcm: metaDomain("googlefcm"),
         },
-
         icon: "https://fastly.jsdelivr.net/gh/MiToverG422/Qure@master/IconSet/Color/fcm.png",
-
         rules: ["RULE-SET,googlefcm,FCM"],
     },
-
     {
         name: "Google",
-
         providers: {
             google: metaDomain("google"),
-
             google_ip: metaIp("google", "google_ip", "google"),
         },
-
         icon: ICON.google,
-
         rules: ["RULE-SET,google,Google", "RULE-SET,google_ip,Google,no-resolve"],
     },
-
     {
         name: "Microsoft",
         direct: true,
-
         providers: {
             microsoft: metaDomain("microsoft"),
         },
-
         icon: ICON.microsoft,
-
         rules: ["RULE-SET,microsoft,Microsoft"],
     },
-
     {
         name: "Apple",
         direct: true,
-
         providers: {
             apple: metaDomain("apple"),
         },
-
         icon: ICON.apple,
-
         rules: ["RULE-SET,apple,Apple"],
     },
-
     {
         name: "Telegram",
-
         providers: {
             telegram: metaDomain("telegram"),
-
             telegram_ip: metaIp("telegram", "telegram_ip", "telegram"),
         },
-
         icon: ICON.telegram,
-
         rules: ["RULE-SET,telegram,Telegram", "RULE-SET,telegram_ip,Telegram,no-resolve"],
     },
-
     {
         name: "Steam",
         direct: true,
-
         providers: {
             steam: metaDomain("steam"),
         },
-
         icon: ICON.steam,
-
         rules: ["RULE-SET,steam,Steam"],
     },
-
     {
         name: "TikTok",
         defaultSelected: "美国",
-
         providers: {
             tiktok: metaDomain("tiktok"),
         },
-
         icon: ICON.tiktok,
-
         rules: ["RULE-SET,tiktok,TikTok"],
     },
-
     {
         name: "Twitter",
         preferResidential: true,
-
         providers: {
             twitter: metaDomain("twitter"),
-
             twitter_ip: metaIp("twitter", "twitter_ip", "twitter"),
         },
-
         icon: ICON.twitter,
-
         rules: ["RULE-SET,twitter,Twitter", "RULE-SET,twitter_ip,Twitter,no-resolve"],
     },
-
     {
         name: "Reddit",
         preferResidential: true,
-
         providers: {
             reddit: metaDomain("reddit"),
         },
-
         icon: ICON.reddit,
-
         rules: ["RULE-SET,reddit,Reddit"],
     },
-
     {
         name: "PayPal",
         preferResidential: true,
-
         providers: {
             paypal: metaDomain("paypal"),
         },
-
         icon: ICON.paypal,
-
         rules: ["RULE-SET,paypal,PayPal"],
     },
-
     {
         name: "Emby",
         direct: true,
-
         providers: {
             emby: ruleProvider(
                 "domain",
@@ -609,46 +500,32 @@ const SERVICE_CONFIGS = [
                 "geo/geosite/category-emby.mrs",
             ),
         },
-
         icon: ICON.emby,
-
         rules: ["RULE-SET,emby,Emby", "DOMAIN-SUFFIX,mb3admin.com,Emby", "DOMAIN-KEYWORD,emby,Emby"],
-
         customDomains: SETTINGS.embyDomains,
-
         customDomainSuffixes: SETTINGS.embyDomainSuffixes,
     },
-
     {
         name: "PikPak",
         direct: true,
-
         providers: {
             pikpak: metaDomain("pikpak"),
         },
-
         icon: "https://fastly.jsdelivr.net/gh/lige47/QuanX-icon-rule@main/icon/03CNSoft/pikpak.png",
-
         rules: ["RULE-SET,pikpak,PikPak"],
     },
-
     {
         name: "Spotify",
         direct: true,
-
         providers: {
             spotify: metaDomain("spotify"),
         },
-
         icon: ICON.spotify,
-
         rules: ["RULE-SET,spotify,Spotify"],
     },
-
     {
         name: "AdBlock",
         reject: true,
-
         providers: {
             adblockmihomolite: ruleProvider(
                 "domain",
@@ -657,9 +534,7 @@ const SERVICE_CONFIGS = [
                 "geo/geosite/category-ads-all.mrs",
             ),
         },
-
         icon: ICON.adblock,
-
         rules: ["RULE-SET,adblockmihomolite,AdBlock"],
     },
 ];
@@ -669,14 +544,8 @@ function unique(values) {
 }
 
 function toArray(value) {
-    if (Array.isArray(value)) {
-        return value;
-    }
-
-    if (value == null) {
-        return [];
-    }
-
+    if (Array.isArray(value)) return value;
+    if (value == null) return [];
     return [value];
 }
 
@@ -697,7 +566,6 @@ function buildDomainRules(domains, suffixes, target) {
 
     for (const item of domains || []) {
         const domain = cleanDomain(item);
-
         if (domain) {
             result.push(`DOMAIN,${domain},${target}`);
         }
@@ -705,7 +573,6 @@ function buildDomainRules(domains, suffixes, target) {
 
     for (const item of suffixes || []) {
         const domain = cleanDomain(item);
-
         if (domain) {
             result.push(`DOMAIN-SUFFIX,${domain},${target}`);
         }
@@ -717,25 +584,15 @@ function buildDomainRules(domains, suffixes, target) {
 function selectGroup(name, proxies, extra = {}) {
     return {
         interval: SETTINGS.healthCheck.interval,
-
         timeout: SETTINGS.healthCheck.timeout,
-
         url: SETTINGS.healthCheck.url,
-
         lazy: SETTINGS.healthCheck.lazy,
-
         "max-failed-times": SETTINGS.healthCheck.maxFailedTimes,
-
         "empty-fallback": SETTINGS.healthCheck["empty-fallback"],
-
         type: "select",
-
         hidden: false,
-
         ...extra,
-
         name,
-
         proxies: unique(proxies),
     };
 }
@@ -743,31 +600,18 @@ function selectGroup(name, proxies, extra = {}) {
 function urlTestGroup(name, proxies, extra = {}) {
     return {
         interval: SETTINGS.healthCheck.interval,
-
         timeout: SETTINGS.healthCheck.timeout,
-
         url: SETTINGS.healthCheck.url,
-
         lazy: SETTINGS.healthCheck.lazy,
-
         "max-failed-times": SETTINGS.healthCheck.maxFailedTimes,
-
         "empty-fallback": SETTINGS.healthCheck["empty-fallback"],
-
         type: "url-test",
-
         tolerance: 50,
-
         "exclude-type": "DIRECT",
-
         icon: ICON.auto,
-
         hidden: true,
-
         ...extra,
-
         name,
-
         proxies: unique(proxies),
     };
 }
@@ -793,13 +637,7 @@ function isRelayProxy(proxy) {
 function createRegionGroups(name, icon, proxies) {
     const autoName = `${name}-自动选择`;
 
-    return [
-        urlTestGroup(autoName, proxies),
-
-        selectGroup(name, [autoName, ...proxies], {
-            icon,
-        }),
-    ];
+    return [urlTestGroup(autoName, proxies), selectGroup(name, [autoName, ...proxies], { icon })];
 }
 
 function buildResidentialTestGroups(residentialProxies) {
@@ -816,10 +654,7 @@ function buildResidentialTestGroups(residentialProxies) {
 
 function matchDomainPattern(pattern, domains) {
     const value = String(pattern || "").toLowerCase();
-
-    if (!value) {
-        return false;
-    }
+    if (!value) return false;
 
     if (!value.includes("*") && !value.startsWith("+.") && !value.startsWith(".")) {
         return domains.has(value);
@@ -867,9 +702,7 @@ function matchDomainPattern(pattern, domains) {
             }
         }
 
-        if (matched) {
-            return true;
-        }
+        if (matched) return true;
     }
 
     return false;
@@ -885,12 +718,9 @@ function filterAndClassifyProxies(config) {
     const regular = [];
 
     for (const proxy of input) {
-        if (!isObject(proxy)) {
-            continue;
-        }
+        if (!isObject(proxy)) continue;
 
         const type = String(proxy.type || "").toLowerCase();
-
         const name = String(proxy.name || "").trim();
 
         if (!name || !SUPPORTED_PROXY_TYPES.has(type)) {
@@ -902,12 +732,8 @@ function filterAndClassifyProxies(config) {
         }
 
         const isC = isCAirportProxy(proxy);
-
         const isResidential = isResidentialProxy(proxy);
 
-        /*
-         * C 機場僅保留家寬。
-         */
         if (isC && !isResidential) {
             continue;
         }
@@ -931,23 +757,11 @@ function filterAndClassifyProxies(config) {
         throw new Error("沒有可用節點");
     }
 
-    return {
-        filtered,
-        residential,
-        regular,
-    };
+    return { filtered, residential, regular };
 }
 
 function buildRegionGroups(regularProxies) {
-    const buckets = Object.fromEntries(
-        REGION_DEFINITIONS.map((region) => [
-            region.name,
-            {
-                ...region,
-                proxies: [],
-            },
-        ]),
-    );
+    const buckets = Object.fromEntries(REGION_DEFINITIONS.map((region) => [region.name, { ...region, proxies: [] }]));
 
     const other = [];
 
@@ -955,9 +769,7 @@ function buildRegionGroups(regularProxies) {
         let matchedLocation = false;
 
         for (const region of REGION_DEFINITIONS) {
-            if (!region.regex.test(proxy.name)) {
-                continue;
-            }
+            if (!region.regex.test(proxy.name)) continue;
 
             buckets[region.name].proxies.push(proxy.name);
 
@@ -986,9 +798,7 @@ function buildFinalProxies(filteredProxies, hasRegularProxies) {
     const result = [];
 
     for (const proxy of filteredProxies) {
-        const finalProxy = {
-            ...proxy,
-        };
+        const finalProxy = { ...proxy };
 
         if (isRelayProxy(finalProxy)) {
             if (!hasRegularProxies) {
@@ -1006,13 +816,11 @@ function buildFinalProxies(filteredProxies, hasRegularProxies) {
             name: DIRECT_PROXY.DUAL,
             type: "direct",
         },
-
         {
             name: DIRECT_PROXY.IPV4,
             type: "direct",
             "ip-version": "ipv4-prefer",
         },
-
         {
             name: DIRECT_PROXY.IPV6,
             type: "direct",
@@ -1031,9 +839,7 @@ function buildProxyGroups({ filteredProxies, regularProxies, residentialProxies,
     const mNames = unique(filteredProxies.filter(isMNode).map((proxy) => proxy.name));
 
     const hasRegular = regularNames.length > 0;
-
     const hasResidential = residentialNames.length > 0;
-
     const hasM = mNames.length > 0;
 
     const regionSelectNames = regionGroups.filter((group) => group.type === "select").map((group) => group.name);
@@ -1043,12 +849,9 @@ function buildProxyGroups({ filteredProxies, regularProxies, residentialProxies,
     const mGroupCandidate = hasM ? [GROUP.M] : [];
 
     const functionalGroups = [];
-
     const residentialTestGroups = buildResidentialTestGroups(residentialProxies);
 
-    /*
-     * 链式前置
-     */
+    // 鏈式前置
     if (hasRegular) {
         functionalGroups.push(
             selectGroup(GROUP.RELAY, regularNames, {
@@ -1057,16 +860,11 @@ function buildProxyGroups({ filteredProxies, regularProxies, residentialProxies,
         );
     }
 
-    /*
-     * 默认代理
-     */
+    // 預設代理
     const defaultCandidates = unique([
         ...mGroupCandidate,
-
         ...regionSelectNames,
-
         ...(hasResidential ? [GROUP.RESIDENTIAL] : []),
-
         ...normalBaseGroupNames,
     ]);
 
@@ -1076,15 +874,10 @@ function buildProxyGroups({ filteredProxies, regularProxies, residentialProxies,
         }),
     );
 
-    /*
-     * 手动 / 自动
-     */
+    // 手動、自動
     if (hasRegular) {
         functionalGroups.push(
-            selectGroup(GROUP.MANUAL, [...regularNames, ...residentialNames], {
-                icon: ICON.rocket,
-            }),
-
+            selectGroup(GROUP.MANUAL, [...regularNames, ...residentialNames], { icon: ICON.rocket }),
             urlTestGroup(GROUP.AUTO, regularNames),
         );
     } else if (hasResidential) {
@@ -1095,9 +888,7 @@ function buildProxyGroups({ filteredProxies, regularProxies, residentialProxies,
         );
     }
 
-    /*
-     * M节点
-     */
+    // [M] 節點
     const mGroups = hasM
         ? [
               selectGroup(GROUP.M, mNames, {
@@ -1107,57 +898,34 @@ function buildProxyGroups({ filteredProxies, regularProxies, residentialProxies,
         : [];
 
     const finalRules = [...BASE_RULES];
+    const finalRuleProviders = { ...BASE_RULE_PROVIDERS };
 
-    const finalRuleProviders = {
-        ...BASE_RULE_PROVIDERS,
-    };
-
-    /*
-     * 服務分流
-     */
+    // 各服務分流
     for (const service of SERVICE_CONFIGS) {
         if (!SETTINGS.enableServices[service.name]) {
             continue;
         }
 
         finalRules.push(...service.rules);
-
         finalRules.push(...buildDomainRules(service.customDomains, service.customDomainSuffixes, service.name));
 
         Object.assign(finalRuleProviders, service.providers || {});
 
         if (service.reject) {
-            functionalGroups.push(
-                selectGroup(service.name, ["REJECT", "REJECT-DROP", "PASS"], {
-                    icon: service.icon,
-                }),
-            );
-
+            functionalGroups.push(selectGroup(service.name, ["REJECT", "REJECT-DROP", "PASS"], { icon: service.icon }));
             continue;
         }
 
         const members = unique([
             ...(service.preferResidential ? [GROUP.SENSITIVE] : []),
-
             GROUP.DEFAULT,
-
             ...mGroupCandidate,
-
             ...(hasResidential ? [GROUP.RESIDENTIAL] : []),
-
             ...normalBaseGroupNames,
-
             ...regionSelectNames,
-
             ...(service.direct ? [GROUP.DIRECT] : []),
         ]);
 
-        /*
-         * 所有敏感服務固定預設：
-         * 敏感代理组
-         *
-         * 不再依賴 hasResidential。
-         */
         const requestedDefault = service.preferResidential ? GROUP.SENSITIVE : service.defaultSelected;
 
         const effectiveDefault = requestedDefault && members.includes(requestedDefault) ? requestedDefault : GROUP.DEFAULT;
@@ -1165,109 +933,49 @@ function buildProxyGroups({ filteredProxies, regularProxies, residentialProxies,
         functionalGroups.push(
             selectGroup(service.name, members, {
                 icon: service.icon,
-
                 "default-selected": effectiveDefault,
             }),
         );
     }
 
-    /*
-     * 漏网之鱼 / 直连
-     */
+    // 漏網之魚、直連
     functionalGroups.push(
-        selectGroup(
-            GROUP.FALLBACK,
-
-            [GROUP.DEFAULT, ...mGroupCandidate, GROUP.DIRECT],
-
-            {
-                icon: ICON.stack,
-            },
-        ),
-
-        selectGroup(
-            GROUP.DIRECT,
-
-            [DIRECT_PROXY.DUAL, DIRECT_PROXY.IPV4, DIRECT_PROXY.IPV6],
-
-            {
-                url: "https://connectivitycheck.platform.hicloud.com/generate_204",
-
-                icon: ICON.china,
-            },
-        ),
+        selectGroup(GROUP.FALLBACK, [GROUP.DEFAULT, ...mGroupCandidate, GROUP.DIRECT], { icon: ICON.stack }),
+        selectGroup(GROUP.DIRECT, [DIRECT_PROXY.DUAL, DIRECT_PROXY.IPV4, DIRECT_PROXY.IPV6], {
+            url: "https://connectivitycheck.platform.hicloud.com/generate_204",
+            icon: ICON.china,
+        }),
     );
 
-    /*
-     * 家宽
-     */
-    const residentialGroups = hasResidential
-        ? [
-              selectGroup(GROUP.RESIDENTIAL, residentialNames, {
-                  icon: ICON.residential,
-              }),
-          ]
-        : [];
+    const residentialGroups = hasResidential ? [selectGroup(GROUP.RESIDENTIAL, residentialNames, { icon: ICON.residential })] : [];
 
-    /*
-     * 敏感代理组本身：
-     *
-     * 有家宽 → 默认家宽
-     * 無家宽 → 默认代理
-     *
-     * 不能 default-selected 自己。
-     */
     const sensitiveMembers = unique([...(hasResidential ? [GROUP.RESIDENTIAL] : []), GROUP.DEFAULT, ...mGroupCandidate]);
 
     const sensitiveGroup = selectGroup(GROUP.SENSITIVE, sensitiveMembers, {
         icon: ICON.proxy,
-
         "default-selected": hasResidential ? GROUP.RESIDENTIAL : GROUP.DEFAULT,
     });
 
-    /*
-     * GLOBAL
-     */
     const globalGroup = selectGroup(
         GROUP.GLOBAL,
-
         unique([
             ...residentialTestGroups.map((group) => group.name),
-
             GROUP.SENSITIVE,
-
             ...mGroups.map((group) => group.name),
-
             ...residentialGroups.map((group) => group.name),
-
             ...functionalGroups.map((group) => group.name),
-
             ...regionGroups.map((group) => group.name),
         ]),
-
-        {
-            icon: ICON.global,
-        },
+        { icon: ICON.global },
     );
 
-    /*
-     * 最終統一排序。
-     *
-     * 建立順序不再決定 UI 顯示順序。
-     */
     const proxyGroups = sortProxyGroups([
         ...residentialTestGroups,
-
         sensitiveGroup,
-
         globalGroup,
-
         ...mGroups,
-
         ...functionalGroups,
-
         ...residentialGroups,
-
         ...regionGroups,
     ]);
 
@@ -1278,20 +986,11 @@ function buildProxyGroups({ filteredProxies, regularProxies, residentialProxies,
     };
 }
 
-/*
- * ==========================
- * DNS
- * ==========================
- *
- * 普通海外：
- * DNS → 默认代理
- *
- * 各服務：
- * DNS → 對應服務組
- *
- * 因此服務組切換出口時，
- * DoH 出口會跟著服務組切換。
- */
+// ============================================================
+// DNS
+// MICU 直連使用境內 DNS。
+// MICU 海外線保持 Emby 代理組 DNS。
+// ============================================================
 
 const COMMON_DNS_RE =
     /(223\.5\.5\.5|223\.6\.6\.6|119\.29\.29\.29|1\.12\.12\.12|120\.53\.53\.53|114\.114\.114\.114|180\.76\.76\.76|1\.1\.1\.1|1\.0\.0\.1|8\.8\.8\.8|8\.8\.4\.4|94\.140\.14\.14|94\.140\.15\.15|127\.0\.0\.1|alidns|doh\.pub|dot\.pub|dnspod|dns\.baidu|dns\.google|cloudflare|adguard|system)/i;
@@ -1301,12 +1000,9 @@ function buildGroupDns(groupName) {
 }
 
 function addServiceDnsRules(policy, service) {
-    if (!service || service.reject) {
-        return;
-    }
+    if (!service || service.reject) return;
 
     const dnsServers = buildGroupDns(service.name);
-
     const providers = service.providers || {};
 
     for (const rule of service.rules || []) {
@@ -1315,17 +1011,10 @@ function addServiceDnsRules(policy, service) {
             .map((item) => item.trim());
 
         const type = parts[0];
-
         const value = parts[1];
 
-        if (!type || !value) {
-            continue;
-        }
+        if (!type || !value) continue;
 
-        /*
-         * 只處理 domain 類 Rule Provider。
-         * IP CIDR 不進 nameserver-policy。
-         */
         if (type === "RULE-SET") {
             const provider = providers[value];
 
@@ -1338,43 +1027,24 @@ function addServiceDnsRules(policy, service) {
 
         if (type === "DOMAIN") {
             const domain = cleanDomain(value);
-
-            if (domain) {
-                policy[domain] = dnsServers;
-            }
-
+            if (domain) policy[domain] = dnsServers;
             continue;
         }
 
         if (type === "DOMAIN-SUFFIX") {
             const domain = cleanDomain(value);
-
-            if (domain) {
-                policy[`+.${domain}`] = dnsServers;
-            }
+            if (domain) policy[`+.${domain}`] = dnsServers;
         }
     }
 
-    /*
-     * 自訂完整域名
-     */
     for (const value of service.customDomains || []) {
         const domain = cleanDomain(value);
-
-        if (domain) {
-            policy[domain] = dnsServers;
-        }
+        if (domain) policy[domain] = dnsServers;
     }
 
-    /*
-     * 自訂後綴
-     */
     for (const value of service.customDomainSuffixes || []) {
         const domain = cleanDomain(value);
-
-        if (domain) {
-            policy[`+.${domain}`] = dnsServers;
-        }
+        if (domain) policy[`+.${domain}`] = dnsServers;
     }
 }
 
@@ -1392,13 +1062,8 @@ function buildServiceDnsPolicy() {
     return policy;
 }
 
-/*
- * BASE_RULES 中固定走敏感代理组的域名，
- * DNS 也走敏感代理组。
- */
 function buildSensitiveBaseDnsPolicy() {
     const policy = {};
-
     const dnsServers = buildGroupDns(GROUP.SENSITIVE);
 
     for (const rule of BASE_RULES) {
@@ -1407,9 +1072,7 @@ function buildSensitiveBaseDnsPolicy() {
             .map((item) => item.trim());
 
         const type = parts[0];
-
         const value = parts[1];
-
         const target = parts[2];
 
         if (target !== GROUP.SENSITIVE) {
@@ -1418,20 +1081,13 @@ function buildSensitiveBaseDnsPolicy() {
 
         if (type === "DOMAIN") {
             const domain = cleanDomain(value);
-
-            if (domain) {
-                policy[domain] = dnsServers;
-            }
-
+            if (domain) policy[domain] = dnsServers;
             continue;
         }
 
         if (type === "DOMAIN-SUFFIX") {
             const domain = cleanDomain(value);
-
-            if (domain) {
-                policy[`+.${domain}`] = dnsServers;
-            }
+            if (domain) policy[`+.${domain}`] = dnsServers;
         }
     }
 
@@ -1445,25 +1101,16 @@ function buildDnsAndHosts(config, filteredProxies) {
 
     const originalProxyServerNameserver = toArray(originalDns["proxy-server-nameserver"]).filter((dns) => !COMMON_DNS_RE.test(String(dns)));
 
-    /*
-     * 代理 server 域名。
-     */
     const proxyDomains = new Set(
         filteredProxies
             .filter((proxy) => typeof proxy.server === "string" && proxy.server.trim())
             .map((proxy) => proxy.server.toLowerCase()),
     );
 
-    /*
-     * 只保留原配置中與 proxy server
-     * 解析有關的 policy。
-     */
     const originalPolicyNameserver = {};
 
     for (const policy of [originalDns["nameserver-policy"], originalDns["proxy-server-nameserver-policy"]]) {
-        if (!isObject(policy)) {
-            continue;
-        }
+        if (!isObject(policy)) continue;
 
         for (const [domain, dns] of Object.entries(policy)) {
             if (matchDomainPattern(domain, proxyDomains)) {
@@ -1472,49 +1119,25 @@ function buildDnsAndHosts(config, filteredProxies) {
         }
     }
 
-    /*
-     * 中國 DNS。
-     */
     const chinaDNS = ["https://dns.alidns.com/dns-query#DIRECT", "https://doh.pub/dns-query#DIRECT"];
 
-    /*
-     * 普通海外 DNS。
-     */
     const foreignDNS = buildGroupDns(GROUP.DEFAULT);
-
-    /*
-     * 服務 DNS 跟隨自己的服務組。
-     */
     const serviceDnsPolicy = buildServiceDnsPolicy();
-
-    /*
-     * 固定敏感域名。
-     */
     const sensitiveBaseDnsPolicy = buildSensitiveBaseDnsPolicy();
 
     const dns = {
         enable: true,
-
         ipv6: true,
-
         "use-hosts": true,
-
         "use-system-hosts": true,
-
         "cache-algorithm": "arc",
 
         "enhanced-mode": "fake-ip",
-
         "fake-ip-range": "198.18.0.1/16",
 
-        "fake-ip-filter": ["rule-set:private", "rule-set:fakeip_filter"],
+        // MICU 回傳真實解析地址，不使用 Fake-IP。
+        "fake-ip-filter": ["rule-set:private", "rule-set:fakeip_filter", "+.micu.hk"],
 
-        /*
-         * 代理節點 server DNS。
-         *
-         * 保持 DIRECT DNS，
-         * 避免代理自身產生 DNS 循環。
-         */
         "proxy-server-nameserver": unique([...chinaDNS, ...originalProxyServerNameserver]),
 
         ...(Object.keys(originalPolicyNameserver).length
@@ -1527,10 +1150,18 @@ function buildDnsAndHosts(config, filteredProxies) {
 
         nameserver: foreignDNS,
 
+        // 精確的海外線 DNS 與 MICU 直連 DNS 分離。
         "nameserver-policy": {
             ...serviceDnsPolicy,
-
             ...sensitiveBaseDnsPolicy,
+
+            "+.micu.hk": chinaDNS,
+            "tv.micu.hk": chinaDNS,
+
+            "media.micu.hk": buildGroupDns("Emby"),
+            "media1.micu.hk": buildGroupDns("Emby"),
+            "media2.micu.hk": buildGroupDns("Emby"),
+            "media3.micu.hk": buildGroupDns("Emby"),
 
             "rule-set:cn": chinaDNS,
         },
@@ -1548,29 +1179,22 @@ function buildDnsAndHosts(config, filteredProxies) {
 
     const hosts = {
         "dns.alidns.com": ["223.5.5.5", "223.6.6.6"],
-
         "doh.pub": ["1.12.12.12", "120.53.53.53"],
-
         "dns.cloudflare.com": ["1.1.1.1", "1.0.0.1"],
-
         "dns.google": ["8.8.8.8", "8.8.4.4"],
-
         "services.googleapis.cn": ["services.googleapis.com"],
-
         "+.mcdn.bilivideo.com": ["0.0.0.0"],
-
         "+.mcdn.bilivideo.cn": ["0.0.0.0"],
-
         "+.edge.mountaintoys.cn": ["0.0.0.0"],
-
         ...proxyHosts,
     };
 
-    return {
-        dns,
-        hosts,
-    };
+    return { dns, hosts };
 }
+
+// ============================================================
+// 配置完整性檢查
+// ============================================================
 
 function assertUniqueNames(items, label) {
     const seen = new Set();
@@ -1592,11 +1216,9 @@ function assertUniqueNames(items, label) {
 
 function assertConfigIntegrity(config) {
     const proxies = toArray(config.proxies);
-
     const groups = toArray(config["proxy-groups"]);
 
     assertUniqueNames(proxies, "proxy");
-
     assertUniqueNames(groups, "proxy-group");
 
     const proxyNames = new Set(proxies.map((proxy) => proxy.name));
@@ -1627,9 +1249,7 @@ function assertConfigIntegrity(config) {
         }
     }
 
-    /*
-     * 依賴圖。
-     */
+    // 檢查代理組是否存在循環依賴。
     const graph = new Map();
 
     for (const name of [...proxyNames, ...groupNames]) {
@@ -1653,26 +1273,21 @@ function assertConfigIntegrity(config) {
     }
 
     const state = new Map();
-
     const stack = [];
 
     function visit(node) {
         const current = state.get(node) || 0;
 
-        if (current === 2) {
-            return;
-        }
+        if (current === 2) return;
 
         if (current === 1) {
             const start = stack.indexOf(node);
-
             const cycle = [...stack.slice(start), node].join(" -> ");
 
             throw new Error(`檢測到代理循環依賴: ${cycle}`);
         }
 
         state.set(node, 1);
-
         stack.push(node);
 
         for (const next of graph.get(node) || []) {
@@ -1680,7 +1295,6 @@ function assertConfigIntegrity(config) {
         }
 
         stack.pop();
-
         state.set(node, 2);
     }
 
@@ -1688,6 +1302,10 @@ function assertConfigIntegrity(config) {
         visit(node);
     }
 }
+
+// ============================================================
+// Bettbox 主入口
+// ============================================================
 
 function main(config) {
     const sourceConfig = config || {};
@@ -1698,128 +1316,85 @@ function main(config) {
 
     const { proxyGroups, finalRules, finalRuleProviders } = buildProxyGroups({
         filteredProxies: filtered,
-
         regularProxies: regular,
-
         residentialProxies: residential,
-
         regionGroups,
     });
 
-    const hasRegular = regular.length > 0;
-
-    const finalProxies = buildFinalProxies(filtered, hasRegular);
+    const finalProxies = buildFinalProxies(filtered, regular.length > 0);
 
     const { dns, hosts } = buildDnsAndHosts(sourceConfig, filtered);
 
     const newConfig = {
         dns,
-
         hosts,
 
         "allow-lan": true,
-
         ipv6: true,
-
         mode: "rule",
 
-        "log-level": "silent",
+        // 排查期間保留基本日誌。
+        "log-level": "info",
 
         "bind-address": "*",
-
         "unified-delay": true,
-
         "tcp-concurrent": true,
-
         "find-process-mode": "strict",
 
         "external-controller": "127.0.0.1:9090",
-
         "external-ui": "ui",
-
         "external-ui-url": "https://github.com/Zephyruso/zashboard/releases/latest/download/dist.zip",
 
         profile: {
             "store-selected": true,
-
             "store-fake-ip": true,
         },
 
         ntp: {
             enable: true,
-
             "write-to-system": false,
-
             server: "ntp.aliyun.com",
-
             port: 123,
-
             interval: 60,
         },
 
         tun: {
             enable: true,
-
             stack: "system",
-
             "auto-route": true,
-
             "strict-route": true,
-
             "auto-redirect": false,
-
             "auto-detect-interface": true,
-
             "dns-hijack": ["any:53", "tcp://any:53"],
         },
 
         proxies: finalProxies,
-
         "proxy-groups": proxyGroups,
-
         "rule-providers": finalRuleProviders,
 
         rules: [
             `RULE-SET,github,${GROUP.DEFAULT}`,
-
             ...finalRules,
-
             `RULE-SET,gfw,${GROUP.DEFAULT}`,
-
             `RULE-SET,cn_additional,${GROUP.DIRECT}`,
-
             `RULE-SET,cn_ip,${GROUP.DIRECT}`,
-
             `MATCH,${GROUP.FALLBACK}`,
         ],
 
         sniffer: {
             enable: true,
-
             sniff: {
                 HTTP: {
                     ports: [80, "8080-8880"],
-
                     "override-destination": true,
                 },
-
                 TLS: {
-                    ports: [
-                        443,
-
-                        8443,
-                    ],
+                    ports: [443, 8443],
                 },
-
                 QUIC: {
-                    ports: [
-                        443,
-
-                        8443,
-                    ],
+                    ports: [443, 8443],
                 },
             },
-
             "skip-domain": ["Mijia Cloud", "+.push.apple.com"],
         },
     };
