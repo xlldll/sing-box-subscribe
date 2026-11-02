@@ -288,6 +288,8 @@ const BASE_RULES = [
     "DOMAIN,media2.micu.hk,Emby",
     "DOMAIN,media3.micu.hk,Emby",
     "DOMAIN-SUFFIX,micu.hk,直连",
+    "DOMAIN,ap-cn01.emby.bangumi.ca,直连",
+    "DOMAIN,ap-cn02.emby.bangumi.ca,直连",
 
     "AND,((NETWORK,UDP),(DST-PORT,443),(NOT,((OR,((RULE-SET,cn_additional),(RULE-SET,cn_ip,no-resolve)))))),REJECT",
 
